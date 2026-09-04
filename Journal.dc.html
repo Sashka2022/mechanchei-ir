@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --blue:#0048FF; --blue-deep:#3B5DEC; --sky:#0DB4F4; --turq:#41CAC5; --purple:#6536EA;
+      --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; --green:#1E9E6B;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    a{color:var(--blue);} a:hover{color:var(--blue-deep);}
+    textarea,input{font-family:'Heebo',sans-serif;}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 20px;font-size:14px;}
+    .stationRow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .2s ease;}
+    .stationRow:hover{background:var(--soft);}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">יומן המסע האינטראקטיבי</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">מודול 1 · נוכחות פעילה חובה בכל תחנה</div>
+  </div>
+
+  <div style="display:flex;flex:1;">
+    <!-- timeline list -->
+    <div style="width:400px;border-left:1px solid var(--line);background:var(--white);padding:20px;overflow:auto;">
+      <div style="font-size:13px;font-weight:700;color:var(--ink-dim);padding:0 14px 12px;">11 תחנות במסע</div>
+      <sc-for list="{{stations}}" as="st" hint-placeholder-count="11">
+        <div class="stationRow" style="background:{{st.rowBg}};" onClick="{{st.select}}">
+          <div style="width:34px;height:34px;flex-shrink:0;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:{{st.dotBg}};color:{{st.dotColor}};">{{st.num}}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:{{st.titleColor}};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{st.title}}</div>
+            <div style="font-size:12px;color:var(--ink-dim);">{{st.statusLabel}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- detail panel -->
+    <div style="flex:1;padding:32px 48px;overflow:auto;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="background:var(--soft);color:var(--blue);font-size:13px;font-weight:700;border-radius:999px;padding:4px 14px;">תחנה {{selected.num}}</span>
+        <span style="font-size:13px;color:var(--ink-dim);">{{selected.statusLabel}}</span>
+      </div>
+      <h1 style="font-size:28px;font-weight:800;margin:4px 0 6px;">{{selected.title}}</h1>
+      <p style="font-size:15px;color:var(--ink-dim);margin:0 0 22px;max-width:640px;line-height:1.7;">{{selected.desc}}</p>
+
+      <div style="display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:22px;">
+        <div onClick="{{toggleAttendance}}" style="width:24px;height:24px;border-radius:6px;border:2px solid var(--blue);background:{{attendanceBg}};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          <sc-if value="{{attendanceOn}}" hint-placeholder-val="{{true}}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </sc-if>
+        </div>
+        <div style="font-size:14px;font-weight:700;">סימון נוכחות פעילה בתחנה זו</div>
+        <div style="flex:1;"></div>
+        <div style="font-size:13px;color:var(--ink-dim);">נדרש לצורך ציון ההשתתפות הסופי</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div style="background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;">
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px;">הכנה: שאלות ומוקדי שיח</div>
+          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;">מה חשוב לך לשאול את האנשים והגופים בתחנה זו?</div>
+          <textarea placeholder="לדוגמה: כיצד מתמודד הארגון עם..." style="width:100%;min-height:130px;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;resize:vertical;color:var(--ink);"></textarea>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px;">
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px;">מרחב רפלקטיבי</div>
+          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:12px;">תובנה אישית לתשתית העבודה הרפלקטיבית</div>
+          <textarea placeholder="מה הפתיע אותי? מה זה מלמד אותי על..." style="width:100%;min-height:130px;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;resize:vertical;color:var(--ink);"></textarea>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;gap:8px;">
+          <span style="background:var(--soft);color:var(--blue);font-size:12px;font-weight:700;border-radius:999px;padding:5px 12px;">ספריית השראה קשורה: חינוך והוגנות</span>
+        </div>
+        <button class="btn" style="background:var(--blue);color:#fff;">שמירת תיעוד התחנה</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var data = [
+      {title:'כאב בטן ראשוני ופערים בחינוך', desc:'תיעוד תובנות משולחנות עגולים והיכרות עם יעדי העיר.', status:'done'},
+      {title:'סיור בשכונת הדר', desc:'צ\'ק-אין גיאוגרפי, תיעוד אתגרי עלייה וחיים משותפים, ותצפית על יזמות חברתית.', status:'done'},
+      {title:'מה אומרים המספרים', desc:'סיכום נתונים מהמרכז למחקר חברתי כלכלי.', status:'done'},
+      {title:'אתגרים ונכסים בקליטת עלייה', desc:'הכנת שאלות לדיאלוג עם הרשות והעמותה לקליטת עלייה.', status:'done'},
+      {title:'משרד החינוך - נעים להכיר', desc:'תיעוד סוגיות של מעמד המורה ואוטונומיה פדגוגית.', status:'done'},
+      {title:'חינוך בלתי פורמלי', desc:'תכנון ממשקים בין מסגרות פורמליות לבלתי פורמליות ביומו של הילד.', status:'current'},
+      {title:'סמינר זכרון יעקב', desc:'יומן השראה והאצה מרוכז.', status:'upcoming'},
+      {title:'מנהל החינוך והשפעה על מדיניות', desc:'מיפוי מענים לפערים לימודיים ושילוב תלמידים.', status:'upcoming'},
+      {title:'מעטפת חינוכית (שפ"ח, מתי"א)', desc:'סנכרון צרכי התלמיד בחינוך המיוחד מול יכולות המורה.', status:'upcoming'},
+      {title:'ועדת החינוך וקולות מהשטח', desc:'הכנת שאלות על מידת ההשפעה של העירייה על סוגיות הליבה.', status:'upcoming'},
+      {title:'רווחה וחיים משותפים (בית הגפן)', desc:'חידוד אתגר החיים המשותפים בחיפה.', status:'upcoming'}
+    ];
+    var selectedIdx = this.state.selected != null ? this.state.selected : 5;
+    var attendance = this.state.attendance || {5:true,0:true,1:true,2:true,3:true,4:true};
+
+    var stations = data.map(function(d, i){
+      var isSel = i === selectedIdx;
+      var statusLabel = d.status === 'done' ? 'הושלמה' : (d.status === 'current' ? 'פעילה כעת' : 'טרם התקיימה');
+      return {
+        num: i+1,
+        title: d.title,
+        statusLabel: statusLabel,
+        rowBg: isSel ? '#F3F6FF' : 'transparent',
+        titleColor: isSel ? 'var(--blue)' : 'var(--ink)',
+        dotBg: d.status === 'done' ? '#E6F7EF' : (isSel ? 'var(--blue)' : '#EEF1FA'),
+        dotColor: d.status === 'done' ? 'var(--green)' : (isSel ? '#fff' : 'var(--ink-dim)'),
+        select: function(){ self.setState({selected:i}); }
+      };
+    });
+
+    var sel = data[selectedIdx];
+    var selStatusLabel = sel.status === 'done' ? 'תחנה שהושלמה' : (sel.status === 'current' ? 'תחנה פעילה כעת' : 'תחנה עתידית');
+
+    return {
+      stations: stations,
+      selected: { num: selectedIdx+1, title: sel.title, desc: sel.desc, statusLabel: selStatusLabel },
+      attendanceOn: !!attendance[selectedIdx],
+      attendanceBg: attendance[selectedIdx] ? 'var(--blue)' : 'transparent',
+      toggleAttendance: function(){
+        var next = Object.assign({}, attendance);
+        next[selectedIdx] = !next[selectedIdx];
+        self.setState({attendance: next});
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --purple:#6536EA; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; --red:#C0524B; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:9px 16px;font-size:13px;}
+    .node{background:var(--white);border:1.5px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;position:relative;}
+    .rm{position:absolute;top:-8px;left:-8px;width:20px;height:20px;border-radius:999px;background:var(--white);border:1px solid var(--line);font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-dim);}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">עץ בעיה — חקירה וזיקוק</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">שלב 1 · מרעיון לפעולה</div>
+  </div>
+
+  <div style="flex:1;padding:36px 60px;display:flex;flex-direction:column;align-items:center;gap:0;">
+
+    <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:14px;">השלכות של הבעיה</div>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:1100px;">
+      <sc-for list="{{effects}}" as="ef" hint-placeholder-count="3">
+        <div class="node" style="border-color:#F0D9D7;">
+          <div class="rm" onClick="{{ef.remove}}">✕</div>
+          {{ef.text}}
+        </div>
+      </sc-for>
+      <div class="btn" onClick="{{addEffect}}" style="background:var(--soft);color:var(--red);border:1px dashed #E3B6B2;">+ הוספת השלכה</div>
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--line);"></div>
+
+    <div class="node" style="background:var(--blue);color:#fff;border:none;font-size:17px;font-weight:800;padding:22px 34px;box-shadow:0 8px 24px rgba(0,72,255,.25);">
+      {{coreProblem}}
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--line);"></div>
+
+    <div style="font-size:13px;font-weight:800;color:var(--purple);margin-bottom:14px;">גורמים לבעיה (שורשים)</div>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:1100px;">
+      <sc-for list="{{causes}}" as="c" hint-placeholder-count="4">
+        <div class="node" style="border-color:#E3DAFB;">
+          <div class="rm" onClick="{{c.remove}}">✕</div>
+          {{c.text}}
+        </div>
+      </sc-for>
+      <div class="btn" onClick="{{addCause}}" style="background:var(--soft);color:var(--purple);border:1px dashed #D9C9FA;">+ הוספת גורם</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var effects = this.state.effects || [
+      'נשירה גבוהה יותר בקרב תלמידי עולים',
+      'פערי הישגים לימודיים מתמשכים',
+      'תחושת ניכור ממערכת החינוך'
+    ];
+    var causes = this.state.causes || [
+      'מחסור במורים דוברי שפת האם',
+      'העדר ממשק בין הרשות לבתי הספר',
+      'עומס יתר על מחנכות בכיתות הטרוגניות',
+      'תקצוב לא מספק למעטפת רגשית'
+    ];
+
+    function makeList(list, key){
+      return list.map(function(text, i){
+        return {
+          text: text,
+          remove: function(){
+            var next = list.slice();
+            next.splice(i,1);
+            var upd = {}; upd[key] = next; self.setState(upd);
+          }
+        };
+      });
+    }
+
+    return {
+      coreProblem: 'קליטה חינוכית לא מספקת של ילדי עולים חדשים במערכת החינוך העירונית',
+      effects: makeList(effects, 'effects'),
+      causes: makeList(causes, 'causes'),
+      addEffect: function(){ self.setState({effects: effects.concat(['השלכה חדשה — לעריכה'])}); },
+      addCause: function(){ self.setState({causes: causes.concat(['גורם חדש — לעריכה'])}); }
+    };
+  }
+}
+</script>
+</body>
+</html>

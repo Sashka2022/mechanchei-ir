@@ -1,0 +1,24 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "האפליקציה — מסע קליקבילי" },
+    { "id": "page-2", "name": "מסכים בודדים (ארכיון)" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "is_interactive": true, "page": "page-1" },
+
+    { "file": "Journal.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "Library.dc.html", "x": 1600, "y": 0, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "Dashboard2.dc.html", "x": 0, "y": 1080, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "ProblemTree.dc.html", "x": 0, "y": 2160, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "TheoryOfChange.dc.html", "x": 1600, "y": 2160, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "BudgetBuilder.dc.html", "x": 3200, "y": 2160, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "StakeholderMap.dc.html", "x": 4800, "y": 2160, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "IdeationBoard.dc.html", "x": 0, "y": 3240, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" },
+    { "file": "PitchBuilder.dc.html", "x": 1600, "y": 3240, "w": 1440, "h": 900, "is_interactive": true, "page": "page-2" }
+  ],
+  "annotations": [
+    { "id": "note-app", "x": 0, "y": -90, "w": 560, "text": "האפליקציה המלאה — שער כניסה (עיר + שם) וניווט אמיתי בין כל המסכים", "page": "page-1" },
+    { "id": "note-archive", "x": 0, "y": -90, "w": 560, "text": "גרסאות בודדות של אותם מסכים לצפייה מהירה — ללא שער כניסה", "page": "page-2" }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}

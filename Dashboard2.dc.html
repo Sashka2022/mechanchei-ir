@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --purple:#6536EA; --sky:#0DB4F4; --turq:#41CAC5; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 22px;font-size:14px;}
+    .toolCard{cursor:pointer;border-radius:12px;padding:14px;border:1px solid var(--line);background:var(--white);transition:all .2s ease;}
+    .toolCard:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(11,20,64,.08);}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">לוח הבקרה — פיתוח יוזמה מרעיון לפעולה</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--purple);">שלב 2 מתוך 4 · תכנון וכלים יזמיים</div>
+  </div>
+
+  <div style="padding:28px 48px 0;">
+    <div style="height:8px;border-radius:999px;background:var(--line);overflow:hidden;display:flex;">
+      <div style="width:25%;background:var(--turq);"></div>
+      <div style="width:25%;background:var(--sky);"></div>
+      <div style="width:1px;"></div>
+    </div>
+  </div>
+
+  <div style="padding:24px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-items:start;">
+    <sc-for list="{{stages}}" as="stage" hint-placeholder-count="4">
+      <div style="background:{{stage.colBg}};border-radius:16px;padding:18px;min-height:420px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="width:26px;height:26px;border-radius:8px;background:{{stage.numBg}};color:{{stage.numColor}};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{stage.num}}</div>
+          <div style="font-size:15px;font-weight:800;">{{stage.title}}</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink-dim);margin-bottom:14px;">{{stage.subtitle}}</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{stage.tools}}" as="tool" hint-placeholder-count="3">
+            <div class="toolCard" style="outline:{{tool.outline}};" onClick="{{tool.select}}">
+              <div style="font-size:14px;font-weight:700;margin-bottom:4px;">{{tool.name}}</div>
+              <div style="font-size:12px;color:var(--ink-dim);line-height:1.5;">{{tool.desc}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="padding:0 48px 48px;">
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px 28px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:6px;">כלי נבחר</div>
+        <div style="font-size:19px;font-weight:800;margin-bottom:4px;">{{selected.name}}</div>
+        <div style="font-size:14px;color:var(--ink-dim);max-width:640px;line-height:1.6;">{{selected.desc}}</div>
+      </div>
+      <button class="btn" style="background:var(--purple);color:#fff;">פתיחת הכלי</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var defs = [
+      { title:'חקירה וזיקוק הבעיה', subtitle:'שלב 1', colBg:'#EAF6F5', numBg:'var(--turq)', numColor:'#fff', tools:[
+        {name:'כאב בטן ראשוני', desc:'הזנת הבעיה החינוכית שהצוות בוחר לפתור.'},
+        {name:'עץ בעיה', desc:'כלי גרפי למיפוי שורשים, גורמים והשלכות.'},
+        {name:'שילוב נתונים', desc:'הצלבה עם השנתון הסטטיסטי ודוחות המרכז למחקר.'}
+      ]},
+      { title:'תכנון וכלים יזמיים', subtitle:'שלב 2 · פעיל כעת', colBg:'#E9F3FF', numBg:'var(--blue)', numColor:'#fff', tools:[
+        {name:'תיאוריית שינוי', desc:'תשומות, פעולות, תוצרים והשפעה ארוכת טווח.'},
+        {name:'מחולל תב"ר', desc:'הגדרת מסגרת תקציב, משאבים ויעדי מימון.'},
+        {name:'גיוס שותפים', desc:'מיפוי בעלי עניין בעירייה שיכולים לתמוך במיזם.'}
+      ]},
+      { title:'רעיונואות ועיצוב', subtitle:'שלב 3', colBg:'#F1EDFD', numBg:'var(--purple)', numColor:'#fff', tools:[
+        {name:'מרחב חשיבה יצירתית', desc:'לוח שיתופי לסיעור מוחות ופיתוח פתרונות.'},
+        {name:'פיילוט והתנסות', desc:'ניהול משימות לבחינת המיזם בשטח והתאמות.'}
+      ]},
+      { title:'אריזה והשפעה', subtitle:'שלב 4', colBg:'#F3F6FF', numBg:'#B9C4E8', numColor:'var(--ink)', tools:[
+        {name:'בונה פרזנטציות ופיצ\'', desc:'תבניות מונחות להצגת התוצרים בסיום התכנית.'}
+      ]}
+    ];
+
+    var selectedKey = this.state.selected || 'תיאוריית שינוי';
+
+    var stages = defs.map(function(d, si){
+      var tools = d.tools.map(function(t){
+        var isSel = t.name === selectedKey;
+        return {
+          name: t.name, desc: t.desc,
+          outline: isSel ? '2px solid var(--blue)' : 'none',
+          select: function(){ self.setState({selected: t.name}); }
+        };
+      });
+      return { num: si+1, title: d.title, subtitle: d.subtitle, colBg: d.colBg, numBg: d.numBg, numColor: d.numColor, tools: tools };
+    });
+
+    var allTools = [].concat.apply([], defs.map(function(d){return d.tools;}));
+    var selected = allTools.filter(function(t){return t.name === selectedKey;})[0] || allTools[0];
+
+    return { stages: stages, selected: selected };
+  }
+}
+</script>
+</body>
+</html>

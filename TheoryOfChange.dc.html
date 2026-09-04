@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --sky:#0DB4F4; --turq:#41CAC5; --purple:#6536EA; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 20px;font-size:14px;}
+    .item{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;position:relative;margin-bottom:10px;line-height:1.5;}
+    .rm{position:absolute;top:-7px;left:-7px;width:18px;height:18px;border-radius:999px;background:var(--white);border:1px solid var(--line);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-dim);}
+    .add{cursor:pointer;font-size:13px;font-weight:700;border-radius:10px;padding:9px 12px;text-align:center;border:1px dashed var(--line);}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">תיאוריית שינוי (Theory of Change)</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">שלב 2 · תכנון וכלים יזמיים</div>
+  </div>
+
+  <div style="padding:16px 48px 0;font-size:14px;color:var(--ink-dim);max-width:760px;">
+    מה נשקיע, מה נעשה, מה ייצא מזה ומה תהיה ההשפעה ארוכת הטווח — לפי כלי החשיבה העיצובית שנלמד בתכנית.
+  </div>
+
+  <div style="flex:1;padding:24px 48px 48px;display:flex;gap:0;align-items:stretch;">
+    <sc-for list="{{columns}}" as="col" hint-placeholder-count="4">
+      <div style="display:flex;align-items:stretch;flex:1;">
+        <div style="flex:1;background:{{col.bg}};border-radius:16px;padding:20px;min-width:0;">
+          <div style="font-size:15px;font-weight:800;margin-bottom:2px;color:{{col.fg}};">{{col.title}}</div>
+          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:16px;">{{col.subtitle}}</div>
+          <sc-for list="{{col.items}}" as="it" hint-placeholder-count="3">
+            <div class="item">
+              <div class="rm" onClick="{{it.remove}}">✕</div>
+              {{it.text}}
+            </div>
+          </sc-for>
+          <div class="add" style="color:{{col.fg}};" onClick="{{col.add}}">+ הוספה</div>
+        </div>
+        <sc-if value="{{col.showArrow}}" hint-placeholder-val="{{true}}">
+          <div style="width:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l-6 8 6 8" transform="translate(24,0) scale(-1,1)"/></svg>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var defaults = [
+      { key:'inputs', title:'תשומות', subtitle:'מה יש לנו', bg:'#EAF6F5', fg:'#1E8B85', items:['צוות של 4 עמיתות מהתכנית','תקציב פיילוט ראשוני','שותפות עם אגף הרווחה'] },
+      { key:'actions', title:'פעולות', subtitle:'מה נעשה', bg:'#E9F3FF', fg:'var(--blue)', items:['סדנאות העצמה הוריות','ליווי פרטני לתלמידים עולים'] },
+      { key:'outputs', title:'תוצרים', subtitle:'מה ייצא מזה', bg:'#F1EDFD', fg:'var(--purple)', items:['30 הורים שהשתתפו בסדנאות','ירידה במספר ההיעדרויות'] },
+      { key:'impact', title:'השפעה', subtitle:'שינוי ארוך טווח', bg:'#F3F6FF', fg:'var(--ink)', items:['שיפור בשילוב עולים חדשים במערכת'] }
+    ];
+
+    var columns = defaults.map(function(d, i){
+      var items = self.state[d.key] || d.items;
+      return {
+        title: d.title, subtitle: d.subtitle, bg: d.bg, fg: d.fg,
+        showArrow: i < defaults.length - 1,
+        items: items.map(function(text, idx){
+          return { text: text, remove: function(){
+            var next = items.slice(); next.splice(idx,1);
+            var upd = {}; upd[d.key] = next; self.setState(upd);
+          }};
+        }),
+        add: function(){
+          var upd = {}; upd[d.key] = items.concat(['פריט חדש — לעריכה']); self.setState(upd);
+        }
+      };
+    });
+
+    return { columns: columns };
+  }
+}
+</script>
+</body>
+</html>

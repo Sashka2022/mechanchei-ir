@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --purple:#6536EA; --turq:#41CAC5; --sky:#0DB4F4; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; --green:#1E9E6B; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 20px;font-size:14px;}
+    .slideRow{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;}
+    .slideRow:hover{background:var(--soft);}
+    textarea{font-family:'Heebo',sans-serif;}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">בונה פרזנטציות ופיצ'</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">שלב 4 · אריזה והשפעה</div>
+  </div>
+
+  <div style="display:flex;flex:1;">
+    <div style="width:360px;border-left:1px solid var(--line);background:var(--white);padding:20px;">
+      <div style="font-size:13px;font-weight:700;color:var(--ink-dim);padding:0 14px 12px;">מבנה הפיצ' — 5 שקפים</div>
+      <sc-for list="{{slides}}" as="s" hint-placeholder-count="5">
+        <div class="slideRow" style="background:{{s.rowBg}};" onClick="{{s.select}}">
+          <div style="width:32px;height:32px;flex-shrink:0;border-radius:8px;background:{{s.dotBg}};color:{{s.dotColor}};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">{{s.num}}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:{{s.titleColor}};">{{s.title}}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:{{s.statusColor}};background:{{s.statusBg}};border-radius:999px;padding:4px 10px;flex-shrink:0;">{{s.statusLabel}}</div>
+        </div>
+      </sc-for>
+      <button class="btn" style="background:var(--blue);color:#fff;width:100%;margin-top:16px;">ייצוא למצגת</button>
+    </div>
+
+    <div style="flex:1;padding:32px 48px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:6px;">שקף {{selected.num}} מתוך 5</div>
+          <h1 style="font-size:26px;font-weight:800;margin:0;">{{selected.title}}</h1>
+        </div>
+        <div class="btn" onClick="{{toggleReady}}" style="background:{{readyBg}};color:{{readyColor}};">{{readyLabel}}</div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:16px;aspect-ratio:16/9;max-width:760px;padding:36px;display:flex;flex-direction:column;justify-content:center;gap:12px;box-shadow:0 6px 18px rgba(11,20,64,.06);margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink-dim);">{{selected.hint}}</div>
+        <div style="font-size:20px;font-weight:800;">{{selected.title}}</div>
+        <div style="width:60px;height:4px;background:linear-gradient(90deg,var(--turq),var(--blue));border-radius:999px;"></div>
+      </div>
+
+      <div style="max-width:760px;">
+        <div style="font-size:13px;font-weight:800;margin-bottom:8px;">תוכן השקף</div>
+        <textarea placeholder="{{selected.placeholder}}" style="width:100%;min-height:130px;border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;resize:vertical;color:var(--ink);"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var data = [
+      { title:'הכאב החינוכי', hint:'פתיחה', placeholder:'תארו במשפט אחד את הבעיה שבחרתן לפתור, מגובה בנתון אחד מרכזי.' },
+      { title:'הפתרון שלנו', hint:'הרעיון', placeholder:'מה הפתרון שפיתחתן? למה הוא מתאים לכאב שזיהיתן?' },
+      { title:'מה עשינו — הפיילוט', hint:'ההתנסות', placeholder:'תארו את שלב הפיילוט: עם מי עבדתן, כמה זמן, מה בדקתן.' },
+      { title:'תוצאות ולמידות', hint:'ההשפעה', placeholder:'אילו תוצאות ראשוניות ראיתן? מה למדתן שהפתיע אתכן?' },
+      { title:'הצעד הבא — הבקשה', hint:'סגירה', placeholder:'מה אתן מבקשות מהעירייה / ועדת החינוך כדי להמשיך קדימה?' }
+    ];
+    var selectedIdx = this.state.selected != null ? this.state.selected : 0;
+    var ready = this.state.ready || {};
+
+    var slides = data.map(function(d, i){
+      var isSel = i === selectedIdx;
+      var isReady = !!ready[i];
+      return {
+        num: i+1, title: d.title,
+        rowBg: isSel ? 'var(--soft)' : 'transparent',
+        titleColor: isSel ? 'var(--blue)' : 'var(--ink)',
+        dotBg: isSel ? 'var(--blue)' : (isReady ? '#E6F7EF' : '#EEF1FA'),
+        dotColor: isSel ? '#fff' : (isReady ? 'var(--green)' : 'var(--ink-dim)'),
+        statusLabel: isReady ? 'מוכן' : 'טיוטה',
+        statusColor: isReady ? 'var(--green)' : 'var(--ink-dim)',
+        statusBg: isReady ? '#E6F7EF' : '#EEF1FA',
+        select: function(){ self.setState({selected:i}); }
+      };
+    });
+
+    var sel = data[selectedIdx];
+    var isReadySel = !!ready[selectedIdx];
+
+    return {
+      slides: slides,
+      selected: { num: selectedIdx+1, title: sel.title, hint: sel.hint, placeholder: sel.placeholder },
+      readyLabel: isReadySel ? 'שקף מוכן ✓' : 'סמנו כמוכן',
+      readyBg: isReadySel ? '#E6F7EF' : 'var(--soft)',
+      readyColor: isReadySel ? 'var(--green)' : 'var(--blue)',
+      toggleReady: function(){
+        var next = Object.assign({}, ready);
+        next[selectedIdx] = !next[selectedIdx];
+        self.setState({ready: next});
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --blue-deep:#3B5DEC; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    a{color:var(--blue);} a:hover{color:var(--blue-deep);}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;gap:14px;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+    <div style="width:1px;height:24px;background:var(--line);"></div>
+    <div style="font-size:16px;font-weight:800;">ספריית השראה וביבליוגרפיה</div>
+  </div>
+
+  <div style="padding:28px 48px 8px;">
+    <p style="font-size:14px;color:var(--ink-dim);margin:0 0 20px;max-width:700px;line-height:1.6;">חומרי קריאה, מאמרים ונתונים המלווים את המסע — מסודרים לפי קטגוריה.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="5">
+        <div onClick="{{tab.select}}" style="cursor:pointer;font-size:14px;font-weight:700;border-radius:999px;padding:10px 20px;background:{{tab.bg}};color:{{tab.color}};border:1px solid {{tab.border}};">{{tab.label}}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding:24px 48px 48px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+    <sc-for list="{{items}}" as="it" hint-placeholder-count="6">
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 2-2z"/></svg>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:var(--ink-dim);">{{it.type}}</span>
+        </div>
+        <div style="font-size:16px;font-weight:800;line-height:1.4;">{{it.title}}</div>
+        <div style="font-size:13px;color:var(--ink-dim);">{{it.source}}</div>
+        <a href="#" style="font-size:13px;font-weight:700;margin-top:4px;">פתיחת המקור ←</a>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var categories = ['יזמות וחשיבה עיצובית','מנהיגות','הוגנות וחינוך','סוגיות חינוכיות מרכזיות','נתונים סטטיסטיים · חיפה'];
+    var active = this.state.active != null ? this.state.active : 0;
+
+    var library = {
+      'יזמות וחשיבה עיצובית':[
+        {title:'עקרונות החשיבה העיצובית (Design Thinking) בעבודה חינוכית', source:'מאמר · IDEO.org', type:'מאמר'},
+        {title:'מרעיון למיזם: כלים לרעיונואות ולפיתוח פתרונות', source:'ערכה מעשית · חותם', type:'ערכה'},
+        {title:'תיאוריית שינוי כתשתית ליזמות חברתית', source:'מדריך · Theory of Change', type:'מדריך'}
+      ],
+      'מנהיגות':[
+        {title:'מנהיגות מקדמת שינוי במערכת חינוך', source:'פרק מספר · רון הייפץ', type:'ספר'},
+        {title:'מנהיגות אדפטיבית מול אתגרים מורכבים', source:'מאמר · הרווארד', type:'מאמר'}
+      ],
+      'הוגנות וחינוך':[
+        {title:'שוויון הזדמנויות בחינוך — בין רטוריקה למציאות', source:'מאמר מדיניות', type:'מאמר'},
+        {title:'פערים חינוכיים בישראל: תמונת מצב', source:'דוח · מכון מופ"ת', type:'דוח'}
+      ],
+      'סוגיות חינוכיות מרכזיות':[
+        {title:'מעמד המורה ואוטונומיה פדגוגית', source:'מאמר · משרד החינוך', type:'מאמר'},
+        {title:'הממשק בין חינוך פורמלי לבלתי פורמלי', source:'מחקר יישומי', type:'מחקר'}
+      ],
+      'נתונים סטטיסטיים · חיפה':[
+        {title:'שנתון סטטיסטי חיפה 2026', source:'עיריית חיפה', type:'נתונים'},
+        {title:'דוח המרכז למחקר חברתי-כלכלי — חינוך בחיפה', source:'דוח מחקר', type:'דוח'},
+        {title:'מדדי קליטת עלייה ברמת השכונה', source:'נתונים · הרשות לקליטת עלייה', type:'נתונים'}
+      ]
+    };
+
+    var tabs = categories.map(function(c,i){
+      var isActive = i === active;
+      return {
+        label: c,
+        bg: isActive ? 'var(--blue)' : 'var(--white)',
+        color: isActive ? '#fff' : 'var(--ink)',
+        border: isActive ? 'var(--blue)' : 'var(--line)',
+        select: function(){ self.setState({active:i}); }
+      };
+    });
+
+    return { tabs: tabs, items: library[categories[active]] };
+  }
+}
+</script>
+</body>
+</html>

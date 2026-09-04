@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --purple:#6536EA; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 20px;font-size:14px;}
+    table{width:100%;border-collapse:collapse;}
+    th{font-size:12px;color:var(--ink-dim);font-weight:700;text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);}
+    td{padding:10px 12px;font-size:14px;border-bottom:1px solid var(--line);}
+    input[type=text],input[type=number]{font-family:'Heebo',sans-serif;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;color:var(--ink);}
+    .rm{cursor:pointer;color:var(--ink-dim);font-size:13px;background:var(--soft);border-radius:8px;padding:6px 10px;}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">מחולל תב"ר — תקציב בלתי רגיל</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">שלב 2 · תכנון וכלים יזמיים</div>
+  </div>
+
+  <div style="padding:28px 48px;display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:15px;font-weight:800;">סעיפי תקציב</div>
+        <div class="btn" onClick="{{addRow}}" style="background:var(--soft);color:var(--blue);">+ הוספת סעיף</div>
+      </div>
+      <table>
+        <thead><tr><th>קטגוריה</th><th>תיאור</th><th style="width:140px;">סכום (₪)</th><th style="width:60px;"></th></tr></thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+            <tr>
+              <td><input type="text" value="{{r.category}}" onChange="{{r.onCategory}}"></td>
+              <td><input type="text" value="{{r.desc}}" onChange="{{r.onDesc}}"></td>
+              <td><input type="number" value="{{r.amount}}" onChange="{{r.onAmount}}"></td>
+              <td><div class="rm" onClick="{{r.remove}}">✕</div></td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:16px;border-top:2px solid var(--line);">
+        <div style="font-size:15px;font-weight:800;">סה"כ תקציב מבוקש</div>
+        <div style="font-size:22px;font-weight:800;color:var(--blue);">{{totalFormatted}} ₪</div>
+      </div>
+    </div>
+
+    <div style="background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;">
+      <div style="font-size:15px;font-weight:800;margin-bottom:16px;">יעדי מימון</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{funders}}" as="f" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--soft);border-radius:10px;">
+            <div style="font-size:13px;font-weight:600;">{{f.name}}</div>
+            <div style="font-size:11px;font-weight:700;color:{{f.color}};background:{{f.bg}};border-radius:999px;padding:4px 10px;">{{f.status}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div class="btn" onClick="{{addFunder}}" style="background:var(--soft);color:var(--purple);width:100%;margin-top:14px;text-align:center;">+ הוספת גורם מממן</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var rows = this.state.rows || [
+      { category:'הדרכה', desc:'סדנאות הורים ומחנכות', amount:18000 },
+      { category:'כוח אדם', desc:'רכזת פרויקט (חלקיות משרה)', amount:32000 },
+      { category:'חומרים', desc:'ערכות ליווי ותרגום', amount:6500 },
+      { category:'הפעלה', desc:'אירוע סיכום וחשיפה', amount:4000 }
+    ];
+    var funders = this.state.funders || [
+      { name:'עיריית חיפה — אגף חינוך', status:'אושר' },
+      { name:'קרן ידידות', status:'בבדיקה' },
+      { name:'עמותת קליטת עלייה', status:'טרם פנינו' }
+    ];
+
+    function statusStyle(s){
+      if (s === 'אושר') return { color:'#1E9E6B', bg:'#E6F7EF' };
+      if (s === 'בבדיקה') return { color:'#B8860B', bg:'#FBF3DC' };
+      return { color:'var(--ink-dim)', bg:'#EEF1FA' };
+    }
+
+    var rowVals = rows.map(function(r, i){
+      return {
+        category: r.category, desc: r.desc, amount: r.amount,
+        onCategory: function(e){ var n = rows.slice(); n[i] = Object.assign({}, r, {category: e.target.value}); self.setState({rows:n}); },
+        onDesc: function(e){ var n = rows.slice(); n[i] = Object.assign({}, r, {desc: e.target.value}); self.setState({rows:n}); },
+        onAmount: function(e){ var n = rows.slice(); n[i] = Object.assign({}, r, {amount: Number(e.target.value) || 0}); self.setState({rows:n}); },
+        remove: function(){ var n = rows.slice(); n.splice(i,1); self.setState({rows:n}); }
+      };
+    });
+
+    var total = rows.reduce(function(sum, r){ return sum + (Number(r.amount) || 0); }, 0);
+
+    var funderVals = funders.map(function(f){
+      var st = statusStyle(f.status);
+      return { name: f.name, status: f.status, color: st.color, bg: st.bg };
+    });
+
+    return {
+      rows: rowVals,
+      totalFormatted: total.toLocaleString('he-IL'),
+      addRow: function(){ self.setState({rows: rows.concat([{category:'סעיף חדש', desc:'', amount:0}])}); },
+      funders: funderVals,
+      addFunder: function(){ self.setState({funders: funders.concat([{name:'גורם מממן חדש', status:'טרם פנינו'}])}); }
+    };
+  }
+}
+</script>
+</body>
+</html>

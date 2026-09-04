@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{ --blue:#0048FF; --purple:#6536EA; --white:#FEFEFE; --soft:#F3F6FF; --ink:#0B1440; --ink-dim:#4A5580; --line:#DCE3F5; }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Heebo',sans-serif;color:var(--ink);}
+    .btn{border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-weight:700;border-radius:10px;padding:11px 20px;font-size:14px;}
+    .note{border-radius:12px;padding:16px;font-size:14px;font-weight:600;line-height:1.5;box-shadow:0 3px 8px rgba(11,20,64,.08);position:relative;min-height:110px;}
+    .star{position:absolute;top:10px;left:10px;cursor:pointer;}
+  </style>
+</helmet>
+<div dir="rtl" style="width:1440px;min-height:900px;background:var(--soft);display:flex;flex-direction:column;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:var(--white);border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="hotam-logo-hebrew.png" style="height:30px;" alt="חותם">
+      <div style="width:1px;height:24px;background:var(--line);"></div>
+      <div style="font-size:16px;font-weight:800;">מרחב חשיבה יצירתית — רעיונואות</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-dim);">שלב 3 · רעיונואות ועיצוב הפתרון</div>
+  </div>
+
+  <div style="padding:20px 48px 0;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:14px;color:var(--ink-dim);max-width:620px;">לוח שיתופי לסיעור מוחות — כל פתק הוא רעיון לפתרון הכאב החינוכי. לחיצה על הכוכב מסמנת רעיון מוביל.</div>
+    <div class="btn" onClick="{{addNote}}" style="background:var(--blue);color:#fff;">+ הוספת פתק</div>
+  </div>
+
+  <div style="padding:24px 48px 48px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;">
+    <sc-for list="{{notes}}" as="n" hint-placeholder-count="8">
+      <div class="note" style="background:{{n.bg}};color:{{n.fg}};">
+        <div class="star" onClick="{{n.toggleStar}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="{{n.starFill}}" stroke="{{n.fg}}" stroke-width="1.6"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+        </div>
+        <div style="margin-top:26px;">{{n.text}}</div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var palette = [
+      {bg:'#E9F3FF', fg:'var(--blue)'},
+      {bg:'#EAF6F5', fg:'#1E8B85'},
+      {bg:'#F1EDFD', fg:'var(--purple)'},
+      {bg:'#F3F6FF', fg:'var(--ink)'}
+    ];
+    var notes = this.state.notes || [
+      'מפגשי הורים-מורים בליווי מתורגמנית',
+      '"חונכות עמיתה" — תלמיד ותיק מלווה עולה חדש',
+      'קבוצת וואטסאפ הורים רב-לשונית לעדכוני בית הספר',
+      'סדנת הורים בנושא המערכת החינוכית הישראלית',
+      'פינת "בית חם" בהפסקות לתלמידים עולים',
+      'שילוב סיפורי עלייה בתכני הלימוד',
+      'יום היכרות משותף עם משפחות ותיקות',
+      'ערכת קליטה דיגיטלית רב-לשונית להורים'
+    ];
+    var stars = this.state.stars || {1:true, 4:true};
+
+    var noteVals = notes.map(function(text, i){
+      var col = palette[i % palette.length];
+      var starred = !!stars[i];
+      return {
+        text: text, bg: col.bg, fg: col.fg,
+        starFill: starred ? col.fg : 'none',
+        toggleStar: function(){
+          var next = Object.assign({}, stars);
+          next[i] = !next[i];
+          self.setState({stars: next});
+        }
+      };
+    });
+
+    return {
+      notes: noteVals,
+      addNote: function(){ self.setState({notes: notes.concat(['רעיון חדש — לעריכה'])}); }
+    };
+  }
+}
+</script>
+</body>
+</html>
