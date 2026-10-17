@@ -2,7 +2,7 @@
    האפיון המלא: docs/initiative-process-spec.md */
 import { store } from '../store.js';
 import { esc, toast, confirmDialog, createView, docs, docData, byOrder } from '../ui.js';
-import { STAGES, WS_STEPS, wsLabel } from '../model.js';
+import { STAGES, WS_STEPS, wsLabel, wsStep } from '../model.js';
 
 export function mountInitiative(root, ctx, params = {}) {
   return params.tid ? mountWorkspace(root, ctx, params) : mountDashboard(root, ctx);
@@ -39,16 +39,17 @@ function mountDashboard(root, ctx) {
       const stations = (st.data.stations || []).sort(byOrder);
       const mine = !isManager && (members.find(m => m.id === me.uid) || {}).teamId;
       const myTeam = mine && teams.find(t => t.id === mine);
+      const viewTeam = isManager ? (teams.find(t => t.id === st.ui.viewTeam) || teams[0]) : null;
       const stationsFor = sid => stations.filter(s => s.step === sid).map(s => s.title);
       const stageStatus = (t, sg) => { if (!sg.steps) return 'soon'; if (!t) return 'idle'; const p = t.progress || {}; if (p[sg.gate]) return 'done'; return sg.steps.some(x => p[x]) ? 'current' : 'idle'; };
       const stageCard = sg => {
-        const stat = stageStatus(myTeam, sg);
+        const stat = stageStatus(myTeam || viewTeam, sg);
         return `<div class="card stage ${stat}"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="hn big">${stat === 'done' ? '✓' : sg.n}</span><div class="grow"><h3 class="s">${sg.title}</h3><p class="hint" style="margin-top:2px">${sg.desc}</p></div>${stat === 'soon' ? '<span class="pill l">בקרוב</span>' : ''}</div>
-          ${sg.steps ? `<div class="chips" style="margin-top:14px">${sg.steps.map(s => {
-            const ok = myTeam && myTeam.progress && myTeam.progress[s];
-            const body = `${ok ? '✓ ' : ''}${wsLabel(s)}`;
-            const tgt = myTeam || (isManager && teams[0]);
-            return tgt ? `<a class="chp ${ok ? 'on' : ''}" href="#/g/${gid}/t/${tgt.id}?step=${s}" title="${esc(stationsFor(s).join(' · '))}">${body}</a>` : `<button type="button" class="chp" data-act="needTeam" title="צריך קודם צוות">${body}</button>`;
+          ${sg.steps ? `<div class="stepl">${sg.steps.map(s => {
+            const ok = (myTeam || viewTeam) && (myTeam || viewTeam).progress && (myTeam || viewTeam).progress[s], ws = wsStep(s), tgt = myTeam || (isManager && viewTeam), at = stationsFor(s);
+            const go = tgt ? `<a class="btn sm pri" href="#/g/${gid}/t/${tgt.id}?step=${s}">${myTeam ? 'כניסה לשלב' : 'צפייה בשלב'}</a>` : `<button type="button" class="btn sm" data-act="needTeam">${isManager ? 'פתחו צוות כדי לצפות במסך' : 'צריך קודם צוות'}</button>`;
+            return `<details class="stepd ${ok ? 'ok' : ''}"><summary><span class="hn ${ok ? 'on' : ''}">${ok ? '✓' : ws.n || '·'}</span><span class="grow"><b>${ws.label}</b><span class="hint">${ws.desc || ''}</span></span></summary>
+              <div class="stepb"><ul>${(ws.do || []).map(x => `<li>${x}</li>`).join('')}</ul>${at.length ? `<p class="hint">נלמד בתחנה: ${esc(at.join(' · '))}</p>` : ''}<div class="row">${go}</div></div></details>`;
           }).join('')}</div>` : `<div class="chips" style="margin-top:14px">${sg.soon.map(x => `<span class="chp">${x}</span>`).join('')}</div>`}
           <div class="hint" style="margin-top:12px"><b>התוצר:</b> ${sg.out}</div></div>`;
       };
@@ -64,7 +65,7 @@ function mountDashboard(root, ctx) {
       };
       return `<section class="fr"><div class="sh"><div class="grow"><div class="eyebrow">מסלול הובלת יוזמה</div><h2 class="t">מהכאב אל היוזמה</h2>
           <p>מגדירים בעיה לפי פרוטוקול הגדרת בעיה, מגיעים לרעיונות ובוחרים פיילוט, ואז בונים תוכנית ואורזים להצגה. כל צוות עובד על יוזמה אחת.</p></div></div></section>
-        <section class="fr"><h3 class="s" style="margin-bottom:14px">ארבעה שלבים</h3><div class="grid2">${STAGES.map(stageCard).join('')}</div></section>
+        <section class="fr"><div class="row" style="margin-bottom:14px"><h3 class="s grow">ארבעה שלבים</h3>${isManager && teams.length ? `<label class="row" style="gap:8px"><span class="hint">צפייה בשלבים של הצוות</span><select class="in" data-change="viewTeam" style="width:auto;min-width:180px">${teams.map(t => `<option value="${t.id}" ${viewTeam && viewTeam.id === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>` : ''}</div><div class="grid2">${STAGES.map(stageCard).join('')}</div></section>
         ${pitchGallery(teams, members)}
         <section class="fr" id="teamsSec"><div class="row"><h3 class="s grow">צוותי היוזמה בקבוצה</h3></div>
           ${teams.length ? `<div class="igrid" style="margin-top:14px">${teams.map(tcard).join('')}</div>` : `<div class="empty" style="margin-top:12px"><b>עוד לא נפתח צוות</b>${isManager ? 'משתתפים יפתחו צוותים בעצמם, ואפשר גם לפתוח מכאן.' : 'פתחו את הצוות הראשון, והזמינו חברים להצטרף.'}</div>`}
@@ -83,6 +84,7 @@ function mountDashboard(root, ctx) {
       };
     },
     acts: {
+      viewTeam(d, el, st, redraw) { st.ui.viewTeam = el.value; redraw(); },
       needTeam() { toast(isManager ? 'עוד אין צוות לפתוח. פתחו צוות למטה' : 'כדי להיכנס לשלב צריך צוות. פתחו צוות או הצטרפו לצוות קיים'); const t = document.getElementById('teamsSec'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
       async join(d, el, st) { try { await joinTeam(d.id, st); toast('הצטרפתם לצוות'); } catch (x) { toast('ההצטרפות נכשלה'); } },
       async leave(d, el, st) { if (await confirmDialog('לצאת מהצוות? העבודה שלו נשארת, ואפשר להצטרף שוב.', 'יציאה')) { try { await leaveTeam(d.id); } catch (x) { toast('היציאה נכשלה'); } } },

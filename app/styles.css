@@ -282,3 +282,17 @@ iframe.ws{width:100%;height:calc(100vh - 200px);min-height:640px;border:0;border
 #foot .fr{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:18px 26px}
 #foot img{height:34px;width:auto}
 #foot span{font-weight:500;font-size:15px}
+
+/* ---- מסכי שלב בדף הובלת יוזמה: תיאור ורשימת מה עושים, נפתחים בלחיצה ---- */
+.stepl{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.stepd{background:var(--frame);border-radius:14px}
+.stepd summary{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;cursor:pointer;list-style:none}
+.stepd summary::-webkit-details-marker{display:none}
+.stepd summary::after{content:'';flex:0 0 auto;margin-top:8px;width:9px;height:9px;border-inline-end:3px solid var(--blue);border-bottom:3px solid var(--blue);transform:rotate(45deg);transition:transform .2s}
+.stepd[open] summary::after{transform:rotate(-135deg)}
+.stepd summary .grow{display:flex;flex-direction:column;gap:2px}
+.stepd summary b{font-size:17px}
+.stepd .hn{margin-top:2px}
+.stepd.ok .hn,.stepd .hn.on{background:var(--purple)}
+.stepb{padding:0 16px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.stepb ul{margin:0;padding-inline-start:44px;display:flex;flex-direction:column;gap:6px}
