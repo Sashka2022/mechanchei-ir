@@ -1,0 +1,75 @@
+rules_version = '2';
+// מחנכי עיר · כללי אבטחה ל-Firestore.
+// מנהלי העל (SUPER) חייבים להיות זהים ל-SUPER_ADMINS ב-js/config.js.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verifiedEmail() { return signedIn() && request.auth.token.email != null && request.auth.token.email_verified == true; }
+    function isSuper() { return verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il']; }
+    function isManager() { return isSuper() || (verifiedEmail() && exists(/databases/$(database)/documents/managers/$(request.auth.token.email.lower()))); }
+    function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
+    function isOwner(gid) { return isManager() && (isSuper() || grp(gid).ownerUid == request.auth.uid); }
+    function isMember(gid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)); }
+    function inTeam(gid, tid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/teams/$(tid)/roster/$(request.auth.uid)); }
+
+    // רשימת מנהלי הקבוצות המורשים
+    match /managers/{email} {
+      allow read: if isManager();
+      allow write: if isSuper();
+    }
+
+    // קוד קבוצה -> מזהה קבוצה. קריאה לפי קוד בלבד (get), בלי רשימה.
+    match /joinCodes/{code} {
+      allow get: if signedIn();
+      allow create: if isManager() && isOwner(request.resource.data.gid);
+      allow update, delete: if isManager() && isOwner(resource.data.gid);
+    }
+
+    match /groups/{gid} {
+      allow get: if isOwner(gid) || isMember(gid);
+      allow list: if isSuper() || (isManager() && resource.data.ownerUid == request.auth.uid);
+      allow create: if isManager() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if isOwner(gid);
+
+      // הסילבוס: המנהל.ת תמיד, משתתפים רק אחרי פרסום
+      match /stations/{sid} {
+        allow read: if isOwner(gid) || (isMember(gid) && grp(gid).published == true);
+        allow write: if isOwner(gid);
+      }
+
+      match /members/{uid} {
+        allow read: if isOwner(gid) || isMember(gid);
+        // הצטרפות: רק למשתמש.ת עצמו.ה, ורק עם קוד שמצביע על הקבוצה הזו
+        allow create: if signedIn() && request.auth.uid == uid
+          && exists(/databases/$(database)/documents/joinCodes/$(request.resource.data.code))
+          && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.code)).data.gid == gid;
+        allow update: if signedIn() && request.auth.uid == uid;
+        allow delete: if isOwner(gid) || (signedIn() && request.auth.uid == uid);
+
+        // נוכחות, תשובות הכנה ויומן אישי: פרטיים לגמרי
+        match /progress/{sid} {
+          allow read, write: if signedIn() && request.auth.uid == uid;
+        }
+      }
+
+      match /teams/{tid} {
+        allow read: if isOwner(gid) || isMember(gid);
+        allow create: if (isMember(gid) || isOwner(gid)) && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isOwner(gid) || inTeam(gid, tid);
+        allow delete: if isOwner(gid);
+
+        match /roster/{uid} {
+          allow read: if isOwner(gid) || isMember(gid);
+          allow create: if signedIn() && request.auth.uid == uid && isMember(gid);
+          allow delete: if isOwner(gid) || (signedIn() && request.auth.uid == uid);
+        }
+
+        // מרחב העבודה של הצוות (meta, nodes, ideas, ...). חברי הצוות והמנהל.ת כותבים; כל חברי הקבוצה קוראים.
+        match /{col}/{docId} {
+          allow read: if isOwner(gid) || isMember(gid);
+          allow write: if col != 'roster' && (inTeam(gid, tid) || isOwner(gid));
+        }
+      }
+    }
+  }
+}
