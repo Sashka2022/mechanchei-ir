@@ -1,6 +1,6 @@
 /* קונפיגורציה של האפליקציה.
-   FIREBASE_CONFIG = null  ->  מצב הדגמה מקומי (הנתונים נשארים בדפדפן בלבד).
-   כדי לעבור לעבודה אמיתית: ממלאים את האובייקט מתוך Firebase Console, הגדרות הפרויקט, "האפליקציות שלך". ראו SETUP.md. */
+   FIREBASE_CONFIG = null  ->  האפליקציה מציגה "לא מחוברת לענן" ולא שומרת נתונים.
+   מילוי: Firebase Console, הגדרות הפרויקט, "האפליקציות שלך". ראו SETUP.md. */
 export const FIREBASE_CONFIG = null;
 /* דוגמה:
 export const FIREBASE_CONFIG = {

@@ -378,6 +378,17 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 #toast{position:fixed;inset-inline:0;bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:50}
 #toast span{background:var(--blue);color:var(--on);padding:11px 24px;border-radius:999px;font-weight:600;opacity:0;transform:translateY(10px);transition:.25s}
 #toast.show span{opacity:1;transform:none}
+.toc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--R)}
+.tcol{display:flex;flex-direction:column;padding:20px}
+.tcol .addrow{margin-top:auto;padding-top:14px}
+.tcol .addrow .in{min-width:0}
+.brow{display:grid;grid-template-columns:minmax(110px,1fr) 2fr 130px 34px;gap:8px;align-items:start}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--R)}
+.pcard{background:var(--frame);border-radius:var(--R);padding:16px;display:flex;flex-direction:column;gap:10px}
+.pcard .in{background:var(--page)}
+.brow .in{background:var(--frame)}
+@media (max-width:1100px){.toc{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.toc{grid-template-columns:1fr}.brow{grid-template-columns:1fr 34px}.brow>div:nth-child(3){grid-column:1}}
 body.emb .top .logo{display:none}
 body.emb #app{padding:0}
 </style>
@@ -390,7 +401,7 @@ body.emb #app{padding:0}
 /* =========================================================
    מחנכי עיר מפצחים כאב בטן
    הגדרת בעיה לפי "פרוטוקול הגדרת בעיה לעבודה בקבוצות" (מעוז), ושלב נוסף של רעיונות לפתרון.
-   נתונים משותפים בזמן אמת דרך Firestore (או הדגמה מקומית), דרך js/workspace-host.js. כל צוות עובד על מסלול נתונים משלו.
+   נתונים משותפים בזמן אמת דרך Firestore, דרך js/workspace-host.js. כל צוות עובד על מסלול נתונים משלו.
    ========================================================= */
 document.documentElement.dir = 'rtl'; document.documentElement.lang = 'he';
 if (self !== top) document.body.classList.add('emb');
@@ -427,9 +438,12 @@ const STEPS = [
   { id: 'path',     n: 4, label: 'בחירת נתיב קריטי',       icon: 'focus' },
   { id: 'def',      n: 5, label: 'הגדרת הבעיה',            icon: 'write' },
   { id: 'ideas',    n: 6, label: 'רעיונות לפתרון',         icon: 'idea',      group: 'מהבעיה אל הפתרון', ext: true },
+  { id: 'toc',      n: 7, label: 'תיאוריית שינוי',         icon: 'target',    group: 'תכנון היוזמה', ext: true, eb: 'שלב תכנון · נגזר מהרעיון שנבחר' },
+  { id: 'budget',   n: 8, label: 'מחולל תב״ר',             icon: 'doc',       ext: true, eb: 'שלב תכנון · נגזר מהפעולות' },
+  { id: 'partners', n: 9, label: 'גיוס שותפים',            icon: 'people',    ext: true, eb: 'שלב תכנון · נגזר מהשדה' },
   { id: 'board',    label: 'לוח למליאה',                  icon: 'board' }
 ];
-const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'sugg', 'votes', 'live'];
+const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'toc', 'budget', 'funders', 'partners', 'sugg', 'votes', 'live'];
 /* מי יכול לכתוב: ממלא.ת (עורך) כותב את הליבה. מסייעים (תורמים) כותבים רק הצעות, הצבעות והטיימר. */
 const OPEN = new Set(['sugg', 'votes', 'live']);
 const SECT = {
@@ -440,6 +454,9 @@ const SECT = {
   path: [['consider', 'שיקול לנתיב']],
   def: [['assumptions', 'הנחת יסוד'], ['wording', 'ניסוח להגדרה'], ['note', 'הערה']],
   ideas: [['ideas', 'רעיון'], ['hmw', 'ניסוח ל״איך נוכל״'], ['note', 'הערה']],
+  toc: [['note', 'הערה']],
+  budget: [['note', 'הערה']],
+  partners: [['note', 'הערה']],
   board: [['note', 'הערה']]
 };
 const SLABEL = {}; Object.values(SECT).forEach(a => a.forEach(([k, v]) => { SLABEL[k] = v; }));
@@ -550,6 +567,9 @@ function done(id) {
     case 'path': return !!curPath();
     case 'def': return !!(M('def.cause') && M('def.phen') && M('def.cons')) && list('assumptions').length >= 2;
     case 'ideas': return list('ideas').length > 0;
+    case 'toc': return TOC_COLS.every(([k]) => tocItems(k).length > 0);
+    case 'budget': return list('budget').some(r => (+V('budget', r.id, 'amount') || 0) > 0);
+    case 'partners': return list('partners').length >= 2;
     case 'board': return ['phen', 'tree', 'path', 'def'].every(done);
   }
 }
@@ -640,8 +660,9 @@ function reportProgress() {
   if (!HOST || !FILLER || !S.loaded) return;
   const progress = {}; STEPS.forEach(s => { progress[s.id] = !!done(s.id); });
   progress.pilot = list('ideas').some(i => V('ideas', i.id, 'star'));
+  progress.plan = ['toc', 'budget', 'partners'].every(done);
   const c = M('def.cause'), p = M('def.phen'), k = M('def.cons');
-  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', ideasCount: list('ideas').length, updatedAt: Date.now() };
+  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', ideasCount: list('ideas').length, budgetTotal: budgetTotal(), updatedAt: Date.now() };
   const key = JSON.stringify({ ...rep, updatedAt: 0 }); if (key === lastReport) return; lastReport = key;
   HOST.report(rep).catch(() => {});
 }
@@ -657,12 +678,12 @@ function render() {
   const sy = scrollY;
   const oldNav = $('.side nav') ? $('.side nav').scrollLeft : null, oldStep = render._step; render._step = S.step;
   const st = STEPS[S.step];
-  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, board: boardHTML }[st.id]();
+  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, board: boardHTML }[st.id]();
   const prev = STEPS[S.step - 1], next = STEPS[S.step + 1];
   const dn = STEPS.filter(s => done(s.id)).length;
   const gs = M('groupStep');
   root.innerHTML = `
-    ${LOCAL ? `<div class="notice deep"><b>מצב הדגמה מקומי</b><span>הנתונים נשמרים בדפדפן הזה בלבד. עבודה משותפת בזמן אמת תפעל אחרי חיבור Firebase.</span></div>` : ''}
+    ${LOCAL ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
     ${!FILLER && !LOCAL ? helperNotice() : ''}
     <header class="fr top"><img class="logo" src="${A.logo}" alt="חותם · אחריות לחינוך בישראל">
       <div class="name grow">מחנכי עיר מפצחים כאב בטן<small>${esc(M('question') || 'עבודה בקבוצות · הגדרת בעיה ורעיונות לפתרון')}</small></div>
@@ -719,7 +740,7 @@ const addRow = (kind, ph, btn = 'הוספה') => `<div class="addrow w"><input c
 const emptyBox = (t, d) => `<div class="empty"><b>${t}</b>${d}</div>`;
 function stepHead(s, desc) {
   return `<section class="fr"><div class="sh"><div class="num">${s.n ? `<span style="font-weight:900;font-size:28px;color:var(--on)">${s.n}</span>` : ic(s.icon, 'white', 34)}</div><div class="grow">
-    <div class="eyebrow ${s.ext ? 'ext' : ''}">${s.ext ? 'שלב נוסף · נגזר מהגדרת הבעיה' : groupOf(s)}</div><h2 class="t">${s.label}</h2><p>${desc}</p></div></div></section>`;
+    <div class="eyebrow ${s.ext ? 'ext' : ''}">${s.ext ? (s.eb || 'שלב נוסף · נגזר מהגדרת הבעיה') : groupOf(s)}</div><h2 class="t">${s.label}</h2><p>${desc}</p></div></div></section>`;
 }
 function groupOf(s) { for (let i = STEPS.indexOf(s); i >= 0; i--) if (STEPS[i].group) return STEPS[i].group; return ''; }
 function guide(items, { title = 'הוראות לשלב', ordered = true, ex = '' } = {}) {
@@ -763,7 +784,7 @@ function setupHTML() {
     <label class="l" for="${fid('meta', 'session', 'question')}">השאלה</label>${ta('meta', 'session', 'question', 'כתבו כאן את השאלה שבגללה התכנסתם')}</section>
   <div class="grid2"><section class="fr">${driverCard()}</section>
     <section class="fr">${roleCard('timeUid', 'timer', 'אחראי.ת זמנים', 'מנהל.ת את הזמן. הטיימר בראש המסך משותף לכולם.')}</section></div>
-  <section class="fr"><h3 class="s" style="margin-bottom:14px">המסע בשישה שלבים</h3>
+  <section class="fr"><h3 class="s" style="margin-bottom:14px">שלבי המסלול</h3>
     <div class="grid3">${STEPS.filter(x => x.n).map(x => `<button class="card" style="border:0;text-align:start;color:inherit" data-act="go" data-i="${STEPS.indexOf(x)}"><div class="row" style="margin-bottom:6px">${ic(x.icon, 'blue', 28)}<span class="pill">${x.n}</span></div><b style="font-size:18px">${x.label}</b></button>`).join('')}</div></section>`;
 }
 
@@ -933,6 +954,95 @@ function ideasHTML() {
   }).join('')}</div>` : `<section class="fr">${emptyBox('עוד אין רעיונות', 'התחילו משאלת ״איך נוכל…״ וכתבו את הרעיון הראשון.')}</section>`}`;
 }
 
+/* ---------- שלב 3 · תכנון היוזמה: תיאוריית שינוי, תב״ר, גיוס שותפים ---------- */
+const TOC_COLS = [['inputs', 'תשומות', 'מה יש לנו'], ['actions', 'פעולות', 'מה נעשה'], ['outputs', 'תוצרים', 'מה ייצא מזה'], ['impact', 'השפעה', 'שינוי ארוך טווח']];
+const FUND_ST = ['טרם פנינו', 'בפנייה', 'אושר'];
+const PART_ST = ['טרם פנינו', 'בתהליך יצירת קשר', 'שותף פעיל'];
+const PART_KIND = { support: 'תומך', veto: 'ווטו', asset: 'נכס' };
+const PART_PRESETS = ['אגף הרווחה', 'אגף התרבות', 'שפ״ח', 'מתי״א', 'מנהל החינוך העירוני', 'ועדת החינוך', 'הרשות לקליטת עלייה'];
+const starIdeas = () => list('ideas').filter(i => V('ideas', i.id, 'star'));
+const tocItems = k => list('toc').filter(i => i.k === k);
+const money = n => (+n || 0).toLocaleString('he-IL');
+const budgetTotal = () => list('budget').reduce((a, r) => a + (+V('budget', r.id, 'amount') || 0), 0);
+const fundedTotal = () => list('funders').filter(f => (V('funders', f.id, 'status') ?? 0) === 2).reduce((a, f) => a + (+V('funders', f.id, 'amount') || 0), 0);
+const stepById = id => STEPS.find(x => x.id === id);
+const num = (col, id, f, ph) => `<input class="in" type="number" min="0" step="any" inputmode="decimal" data-col="${col}" data-id="${id}" data-f="${f}" data-num="1" data-fk="${col}/${id}/${f}" placeholder="${esc(ph)}" value="${esc(V(col, id, f) ?? '')}">`;
+const seg = (col, id, f, opts, cur) => `<div class="seg w">${opts.map((t, i) => `<button class="${cur === i ? 'on' : ''}" data-act="setf" data-col="${col}" data-id="${id}" data-f="${f}" data-v="${i}" data-num="1">${t}</button>`).join('')}</div>`;
+const defBar = () => `<section class="defbox"><div class="hint" style="font-weight:700;margin-bottom:8px;opacity:1">הבעיה שהגדרנו</div><div class="sent" style="font-size:18px;line-height:1.6">${defSentence()}</div></section>`;
+
+function tocHTML() {
+  const s = stepById('toc'), stars = starIdeas(), as = list('assumptions');
+  const col = ([k, t, sub], i) => `<section class="fr tcol"><span class="pill ${['d', '', 'p', 'l'][i]}" style="align-self:flex-start">${i + 1}</span><h3 class="s" style="margin-top:8px">${t}</h3><p class="hint">${sub}</p>
+    <div class="list" style="margin-top:12px">${tocItems(k).map(it => `<div class="item"><div class="grow">${ta('toc', it.id, 'text', t)}${by(it)}</div><button class="rm w" data-act="rm" data-col="toc" data-id="${it.id}" aria-label="מחיקה"></button></div>`).join('')}</div>
+    <div class="addrow w"><input class="in" type="text" data-addin="toc_${k}" placeholder="הוספה"><button class="btn pri" data-act="addToc" data-k="${k}" aria-label="הוספה">+</button></div></section>`;
+  return stepHead(s, 'הופכים את הרעיון שנבחר לתוכנית שאפשר לבצע') +
+  `${how(['חזרו להגדרת הבעיה ולרעיון שסומן לפיילוט', 'מלאו משמאל לימין: תשומות, פעולות, תוצרים, השפעה', 'בדקו שההנחות שבהגדרה נתמכות על ידי הפעולות'],
+    ['<b>תשומות:</b> מה יש לנו כבר, אנשים, זמן, נכסים וקשרים.', '<b>פעולות:</b> מה נעשה בפועל. הרעיון שנבחר לפיילוט הוא נקודת המוצא.', '<b>תוצרים:</b> מה יהיה אחרי הפעולות, דברים שאפשר לספור.', '<b>השפעה:</b> השינוי ארוך הטווח, בהקשר של ההשלכה שבהגדרת הבעיה.'])}
+  ${defBar()}
+  <section class="fr"><div class="row"><h3 class="s grow">הרעיון שנבחר לפיילוט</h3><div class="row w"><button class="btn sm" data-act="tocFromIdeas" ${stars.length ? '' : 'disabled'}>הוספה לפעולות</button><button class="btn sm" data-act="tocFromDef" ${M('def.cons') ? '' : 'disabled'}>השפעה מההגדרה</button></div></div>
+    <div class="chips" style="margin-top:12px">${stars.length ? stars.map(x => `<span class="chip">${esc(V('ideas', x.id, 'text') || '')}</span>`).join('') : '<span class="hint">עוד לא סומן רעיון לפיילוט בשלב 6</span>'}</div></section>
+  <div class="toc">${TOC_COLS.map(col).join('')}</div>
+  <section class="fr"><h3 class="s">הנחות היסוד שהתיאוריה נשענת עליהן</h3><p class="hint" style="margin:4px 0 12px">הנחה שהיא השערה צריכה להיבדק בפיילוט.</p>
+    ${as.length ? `<div class="chips" style="flex-direction:column;align-items:flex-start">${as.map(a => `<span class="chip">${esc(V('assumptions', a.id, 'text') || '')} <span class="pill ${(V('assumptions', a.id, 'type') || 'hyp') === 'hyp' ? 'p' : 'l'}">${TYPES[V('assumptions', a.id, 'type') || 'hyp']}</span></span>`).join('')}</div>` : '<span class="hint">עוד לא נרשמו הנחות יסוד בשלב 5</span>'}</section>`;
+}
+
+function budgetHTML() {
+  const s = stepById('budget'), rows = list('budget'), fs = list('funders'), total = budgetTotal(), funded = fundedTotal();
+  const pct = total ? Math.min(100, Math.round(funded / total * 100)) : 0;
+  return stepHead(s, 'מסגרת תקציב ויעדי מימון לפיילוט') +
+  `${how(['פרטו סעיפי תקציב לפי הפעולות בתיאוריית השינוי', 'רשמו את גורמי המימון הרלוונטיים וסמנו איפה כל אחד עומד', 'בדקו כמה מהתקציב כבר מכוסה'],
+    ['אפשר ליצור סעיפים אוטומטית מהפעולות, ואז לתמחר כל אחד.', '<b>סטטוס מימון:</b> טרם פנינו, בפנייה, אושר. רק סכום שאושר נספר כמכוסה.'])}
+  <section class="fr"><div class="row"><h3 class="s grow">סעיפי תקציב</h3><button class="btn sm w" data-act="budgetFromActions" ${tocItems('actions').length ? '' : 'disabled'}>סעיפים מהפעולות</button></div>
+    <div class="list" style="margin-top:12px">${rows.length ? rows.map(r => `<div class="item brow"><div>${ta('budget', r.id, 'category', 'קטגוריה')}</div><div>${ta('budget', r.id, 'desc', 'תיאור הסעיף')}</div><div>${num('budget', r.id, 'amount', 'סכום ₪')}</div><button class="rm w" data-act="rm" data-col="budget" data-id="${r.id}" aria-label="מחיקה"></button></div>`).join('') : emptyBox('עוד אין סעיפים', 'הוסיפו סעיף, או צרו סעיפים מהפעולות.')}</div>
+    <div class="addrow w"><input class="in" type="text" data-addin="budget" placeholder="סעיף חדש, למשל: הדרכה"><button class="btn pri" data-act="addBudget">הוספה</button></div>
+    <div class="row" style="margin-top:18px;padding-top:14px;border-top:3px solid var(--page)"><b class="grow" style="font-size:18px">סה״כ תקציב מבוקש</b><b style="font-size:28px">${money(total)} ₪</b></div></section>
+  <section class="fr"><h3 class="s">יעדי מימון</h3><div class="list" style="margin-top:12px">${fs.length ? fs.map(f => `<div class="item"><div class="grow">${ta('funders', f.id, 'name', 'גורם מממן')}<div class="row" style="padding:0 10px 6px;gap:14px;align-items:center">${seg('funders', f.id, 'status', FUND_ST, V('funders', f.id, 'status') ?? 0)}<div style="width:150px">${num('funders', f.id, 'amount', 'סכום ₪')}</div></div></div><button class="rm w" data-act="rm" data-col="funders" data-id="${f.id}" aria-label="מחיקה"></button></div>`).join('') : emptyBox('עוד אין יעדי מימון', 'הוסיפו גורם מממן אפשרי.')}</div>
+    <div class="addrow w"><input class="in" type="text" data-addin="funders" placeholder="גורם מממן, למשל: קרן, רשות, תרומה"><button class="btn pri" data-act="addFunder">הוספה</button></div>
+    ${total ? `<div style="margin-top:18px"><div class="prog" style="margin:0 0 8px"><i style="width:${pct}%"></i></div><div class="hint">מכוסה ${money(funded)} ₪ מתוך ${money(total)} ₪ (${pct}%)</div></div>` : ''}</section>`;
+}
+
+function partnersHTML() {
+  const s = stepById('partners'), ps = list('partners'), ch = curPath(), have = ps.map(p => V('partners', p.id, 'name'));
+  const field = ch ? (V('paths', ch.id, 'notes.field') || '') : '';
+  const srcIns = list('insights').filter(i => (V('insights', i.id, 'sources') || {})['בעלי עניין']);
+  const cnt = i => ps.filter(p => (V('partners', p.id, 'status') ?? 0) === i).length;
+  return stepHead(s, 'ממפים מי יכול לתמוך, מי יכול לעצור ומי מחזיק נכסים') +
+  `${how(['רשמו גורמים שאפשר לגייס, עירוניים וקהילתיים', 'סמנו לכל גורם אם הוא תומך, בעל ווטו או נכס, ואיפה הקשר עומד', 'קבעו לכל גורם צעד הבא'],
+    ['המיפוי נשען על שיקול ״השדה״ שרשמתם בבחירת הנתיב הקריטי: תומכים, בעלי עניין עם ווטו, נכסים של אחרים והזדמנויות.', 'גורם עם ווטו שעוד לא פנינו אליו הוא הסיכון הראשון לטפל בו.'])}
+  ${field || srcIns.length ? `<section class="fr"><h3 class="s">מה כבר כתבתם על השדה</h3>${field ? `<p style="margin-top:8px">${esc(field)}</p>` : ''}${srcIns.length ? `<p class="hint" style="margin-top:10px">תובנות שסומנו ״בעלי עניין״ כמקור:</p><ul style="padding-inline-start:22px;margin-top:6px">${srcIns.map(i => `<li>${esc(V('insights', i.id, 'text') || '')}</li>`).join('')}</ul>` : ''}</section>` : ''}
+  <div class="grid3 stats"><div class="stat"><b>${cnt(0)}</b>טרם פנינו</div><div class="stat"><b>${cnt(1)}</b>בתהליך</div><div class="stat"><b>${cnt(2)}</b>שותפים פעילים</div></div>
+  ${ps.length ? `<div class="pgrid">${ps.map(p => `<div class="pcard"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div class="grow">${ta('partners', p.id, 'name', 'שם הגורם', 'big')}</div><button class="rm w" data-act="rm" data-col="partners" data-id="${p.id}" aria-label="מחיקה"></button></div>
+      ${ta('partners', p.id, 'desc', 'מה הוא יכול לתרום, או למה הוא חשוב')}
+      <div><div class="hint" style="margin-bottom:6px">תפקיד</div><div class="seg w">${Object.entries(PART_KIND).map(([k, t]) => `<button class="${(V('partners', p.id, 'kind') || 'support') === k ? 'on' : ''}" data-act="setf" data-col="partners" data-id="${p.id}" data-f="kind" data-v="${k}">${t}</button>`).join('')}</div></div>
+      <div><div class="hint" style="margin-bottom:6px">סטטוס הקשר</div>${seg('partners', p.id, 'status', PART_ST, V('partners', p.id, 'status') ?? 0)}</div>
+      ${ta('partners', p.id, 'next', 'הצעד הבא ומי אחראי עליו')}</div>`).join('')}</div>` : `<section class="fr">${emptyBox('עוד לא נוסף גורם', 'התחילו מגורם אחד שאתם מכירים, או מהרשימה למטה.')}</section>`}
+  <section class="fr"><h3 class="s">הוספת גורם</h3><div class="addrow w"><input class="in" type="text" data-addin="partners" placeholder="שם הגורם"><button class="btn pri" data-act="addPartner">הוספה</button></div>
+    <div class="chips w" style="margin-top:12px">${PART_PRESETS.filter(n => !have.includes(n)).map(n => `<button class="chp" data-act="addPartnerPreset" data-name="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div></section>`;
+}
+
+/* תקצירים ללוח למליאה, לטקסט ולמסמך המודפס */
+function planBoardHTML() {
+  const rows = list('budget'), ps = list('partners');
+  return `<h3 class="s">תיאוריית שינוי</h3><div class="toc">${TOC_COLS.map(([k, t]) => `<div class="card"><b>${t}</b><ul style="padding-inline-start:20px;margin-top:8px;display:flex;flex-direction:column;gap:6px">${tocItems(k).map(i => `<li>${esc(V('toc', i.id, 'text') || '')}</li>`).join('') || '<li class="hint">—</li>'}</ul></div>`).join('')}</div>
+    <h3 class="s">תקציב</h3>${rows.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:6px">${rows.map(r => `<li>${esc(V('budget', r.id, 'category') || '')} ${esc(V('budget', r.id, 'desc') || '')} <b>${money(V('budget', r.id, 'amount'))} ₪</b></li>`).join('')}</ul><p style="margin-top:8px"><b>סה״כ ${money(budgetTotal())} ₪</b> · מכוסה ${money(fundedTotal())} ₪</p>` : '<span class="hint">עוד לא נרשם</span>'}
+    <h3 class="s">שותפים</h3>${ps.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:6px">${ps.map(p => `<li>${esc(V('partners', p.id, 'name') || '')} <span class="pill l">${PART_KIND[V('partners', p.id, 'kind') || 'support']}</span> <span class="hint">${PART_ST[V('partners', p.id, 'status') ?? 0]}</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא נרשם</span>'}`;
+}
+function planText(L) {
+  L.push('', '7. תיאוריית שינוי');
+  TOC_COLS.forEach(([k, t]) => { L.push(t + ':'); const its = tocItems(k); its.forEach(i => L.push('  • ' + (V('toc', i.id, 'text') || ''))); if (!its.length) L.push('  —'); });
+  L.push('', '8. תקציב'); list('budget').forEach(r => L.push(`  • ${V('budget', r.id, 'category') || ''} ${V('budget', r.id, 'desc') || ''}: ${money(V('budget', r.id, 'amount'))} ₪`));
+  L.push(`  סה״כ ${money(budgetTotal())} ₪ · מכוסה ${money(fundedTotal())} ₪`);
+  list('funders').forEach(f => L.push(`  מימון: ${V('funders', f.id, 'name') || ''} (${FUND_ST[V('funders', f.id, 'status') ?? 0]}${V('funders', f.id, 'amount') ? ', ' + money(V('funders', f.id, 'amount')) + ' ₪' : ''})`));
+  L.push('', '9. שותפים'); const ps = list('partners'); ps.forEach(p => L.push(`  • ${V('partners', p.id, 'name') || ''} · ${PART_KIND[V('partners', p.id, 'kind') || 'support']} · ${PART_ST[V('partners', p.id, 'status') ?? 0]}${V('partners', p.id, 'next') ? ' · צעד הבא: ' + V('partners', p.id, 'next') : ''}`)); if (!ps.length) L.push('  —');
+}
+function planReportHTML(e) {
+  const toc = `<table class="g"><tr>${TOC_COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr><tr>${TOC_COLS.map(([k]) => `<td><ul>${tocItems(k).map(i => `<li>${e(V('toc', i.id, 'text') || '')}</li>`).join('')}</ul></td>`).join('')}</tr></table>`;
+  const rows = list('budget'), fs = list('funders'), ps = list('partners');
+  const bud = rows.length ? `<table class="g"><tr><th>קטגוריה</th><th>תיאור</th><th>סכום</th></tr>${rows.map(r => `<tr><td>${e(V('budget', r.id, 'category') || '')}</td><td>${e(V('budget', r.id, 'desc') || '')}</td><td>${money(V('budget', r.id, 'amount'))} ₪</td></tr>`).join('')}</table><p><b>סה״כ ${money(budgetTotal())} ₪</b> · מכוסה ${money(fundedTotal())} ₪</p>${fs.length ? `<h3>יעדי מימון</h3><ul>${fs.map(f => `<li>${e(V('funders', f.id, 'name') || '')} · ${FUND_ST[V('funders', f.id, 'status') ?? 0]}${V('funders', f.id, 'amount') ? ' · ' + money(V('funders', f.id, 'amount')) + ' ₪' : ''}</li>`).join('')}</ul>` : ''}` : '<p class="mut">לא נרשם</p>';
+  const par = ps.length ? `<table class="g"><tr><th>גורם</th><th>תפקיד</th><th>סטטוס</th><th>צעד הבא</th></tr>${ps.map(p => `<tr><td>${e(V('partners', p.id, 'name') || '')}</td><td>${PART_KIND[V('partners', p.id, 'kind') || 'support']}</td><td>${PART_ST[V('partners', p.id, 'status') ?? 0]}</td><td>${e(V('partners', p.id, 'next') || '')}</td></tr>`).join('')}</table>` : '<p class="mut">לא נרשם</p>';
+  return `<div class="blk flow"><h2>7 · תיאוריית שינוי</h2>${toc}</div><div class="blk flow"><h2>8 · תקציב</h2>${bud}</div><div class="blk flow"><h2>9 · שותפים</h2>${par}</div>`;
+}
+
 /* ---------- לוח למליאה ---------- */
 function boardHTML() {
   const ch = curPath(); const ids = ch ? [...chainTo(ch.causeNode), ...chainTo(ch.consNode)].map(n => n.id) : [];
@@ -945,7 +1055,8 @@ function boardHTML() {
   <section class="defbox"><div class="hint" style="font-weight:700;margin-bottom:8px;opacity:1">הגדרת הבעיה</div><div class="sent">${defSentence()}</div></section>
   <section class="fr board"><h3 class="s" style="margin-top:0">הנחות יסוד מרכזיות</h3>${as.length ? `<ol style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${as.map(a => `<li>${esc(V('assumptions', a.id, 'text') || '')} <span class="pill l">${TYPES[V('assumptions', a.id, 'type') || 'hyp']}</span></li>`).join('')}</ol>` : '<span class="hint">עוד לא נרשמו</span>'}
     ${M('hmw') ? `<h3 class="s">שאלת ״איך נוכל…״</h3><p class="lede">${esc(M('hmw'))}</p>` : ''}
-    <h3 class="s">רעיונות שסומנו לפיילוט</h3>${stars.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${stars.map(x => `<li>${esc(V('ideas', x.id, 'text') || '')} <span class="hint">· ${votesOf(x.id)} קולות</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא סומנו רעיונות לפיילוט</span>'}</section>`;
+    <h3 class="s">רעיונות שסומנו לפיילוט</h3>${stars.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${stars.map(x => `<li>${esc(V('ideas', x.id, 'text') || '')} <span class="hint">· ${votesOf(x.id)} קולות</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא סומנו רעיונות לפיילוט</span>'}</section>
+  <section class="fr board">${planBoardHTML()}</section>`;
 }
 function boardText() {
   const L = [], RATE = { s: 'חזק', m: 'בינוני', w: 'חלש' };
@@ -970,6 +1081,7 @@ function boardText() {
   list('assumptions').forEach((a, i) => L.push(`  ${i + 1}. ${V('assumptions', a.id, 'text') || ''} (${TYPES[V('assumptions', a.id, 'type') || 'hyp']})`));
   L.push('', '6. רעיונות לפתרון'); if (M('hmw')) L.push('איך נוכל…: ' + M('hmw'));
   list('ideas').forEach((x, i) => L.push(`  ${V('ideas', x.id, 'star') ? '★' : '•'} ${V('ideas', x.id, 'text') || ''} (${votesOf(x.id)} קולות)`));
+  planText(L);
   const notes = STEPS.filter(st => V('notes', st.id, 'text')); if (notes.length) { L.push('', 'הערות המתעד.ת'); notes.forEach(st => L.push(`  ${st.label}: ${V('notes', st.id, 'text')}`)); }
   L.push('', 'חותם · אחריות לחינוך בישראל');
   return L.join('\n');
@@ -1052,6 +1164,7 @@ ${opts.word ? '' : `<div class="bar"><span>מסמך מוכן להדפסה</span>
 <div class="blk flow"><h2>4 · בחירת נתיב קריטי</h2>${paths.length ? paths.map((p, i) => `<div class="path ${p.id === M('chosenPath') ? 'ch' : ''}"><p><b>נתיב ${LET[i]}${p.id === M('chosenPath') ? ' · הנתיב הנבחר' : ''}:</b> ${e(nodeText(p.causeNode))} ${RA} התופעה ${RA} ${e(nodeText(p.consNode))}</p>${CRIT.map(([k, n]) => `<p class="mut"><b>${n}:</b> ${RATE[V('paths', p.id, 'rate.' + k)] || '—'}${V('paths', p.id, 'notes.' + k) ? ' · ' + e(V('paths', p.id, 'notes.' + k)) : ''}</p>`).join('')}</div>`).join('') : '<p class="mut">לא נוספו נתיבים</p>'}${M('skip') ? `<h3>במה לא משקיעים</h3><p>${e(M('skip'))}</p>` : ''}</div>
 <div class="blk"><h2>5 · הגדרת הבעיה</h2><div class="def"><b>בגלל ש</b> ${e(M('def.cause') || '…')} <b>+ קורה ש</b> ${e(M('def.phen') || '…')} <b>+ לכן ההשלכה היא</b> ${e(M('def.cons') || '…')}</div><h3>הנחות יסוד מרכזיות</h3>${as.length ? `<ol>${as.map(a => `<li>${e(V('assumptions', a.id, 'text') || '')} <span class="mut">(${TYPES[V('assumptions', a.id, 'type') || 'hyp']})</span></li>`).join('')}</ol>` : '<p class="mut">לא נרשם</p>'}</div>
 <div class="blk flow"><h2>6 · רעיונות לפתרון</h2>${M('hmw') ? `<p><b>איך נוכל…</b> ${e(M('hmw'))}</p>` : ''}${ideas.length ? `<table class="g"><tr><th>רעיון</th><th>מטפל ב</th><th>הנחה</th><th>מאמץ</th><th>השפעה</th><th>קולות</th><th>פיילוט</th></tr>${ideasS.map(x => { const a = D.assumptions[V('ideas', x.id, 'assum')]; return `<tr><td>${e(V('ideas', x.id, 'text') || '')}</td><td>${TG[x.target] || ''}</td><td>${a ? e(V('assumptions', V('ideas', x.id, 'assum'), 'text') || '') : '—'}</td><td>${EFF[V('ideas', x.id, 'effort') ?? 1]}</td><td>${IMP[V('ideas', x.id, 'impact') ?? 1]}</td><td>${votesOf(x.id)}</td><td>${V('ideas', x.id, 'star') ? RS : ''}</td></tr>`; }).join('')}</table>` : '<p class="mut">לא נרשמו רעיונות</p>'}</div>
+${planReportHTML(e)}
 ${notes.length ? `<div class="blk flow"><h2>הערות המתעד.ת</h2>${notes.map(st => `<p><b>${e(st.label)}:</b> ${e(V('notes', st.id, 'text'))}</p>`).join('')}</div>` : ''}
 <div class="ft">הופק באפליקציית ״מחנכי עיר מפצחים כאב בטן״ · חותם · אחריות לחינוך בישראל · ${e(dt)}</div></div></body></html>`;
 }
@@ -1075,6 +1188,15 @@ const ACT = {
     if (ROOM) ROOM.presence({ step: S.step }).catch(() => {});
     render(); scrollTo(0, 0);
   },
+  async addToc(e, el) { const inp = $('[data-addin]', el.closest('.addrow')); const v = inp.value.trim(); if (!v) { inp.focus(); return; } inp.value = ''; S.focus = 'toc_' + e.k; await add('toc', { k: e.k, text: v }); },
+  async tocFromIdeas() { const have = tocItems('actions').map(i => V('toc', i.id, 'text')); let n = 0; for (const x of starIdeas()) { const t = V('ideas', x.id, 'text'); if (t && !have.includes(t)) { await add('toc', { k: 'actions', text: t }); n++; } } toast(n ? `נוספו ${n} פעולות מהרעיונות` : 'הרעיונות כבר ברשימה'); },
+  async tocFromDef() { const t = 'צמצום: ' + M('def.cons'); if (tocItems('impact').some(i => V('toc', i.id, 'text') === t)) { toast('כבר ברשימה'); return; } await add('toc', { k: 'impact', text: t }); toast('נוסף להשפעה'); },
+  async addBudget(e, el) { const inp = $('[data-addin]', el.closest('.addrow')); const v = inp.value.trim(); if (!v) { inp.focus(); return; } inp.value = ''; S.focus = 'budget'; await add('budget', { category: v, desc: '', amount: 0 }); },
+  async budgetFromActions() { const have = list('budget').map(r => V('budget', r.id, 'desc')); let n = 0; for (const a of tocItems('actions')) { const t = V('toc', a.id, 'text'); if (t && !have.includes(t)) { await add('budget', { category: '', desc: t, amount: 0 }); n++; } } toast(n ? `נוספו ${n} סעיפים מהפעולות` : 'כל הפעולות כבר בתקציב'); },
+  async addFunder(e, el) { const inp = $('[data-addin]', el.closest('.addrow')); const v = inp.value.trim(); if (!v) { inp.focus(); return; } inp.value = ''; S.focus = 'funders'; await add('funders', { name: v, status: 0, amount: 0 }); },
+  async addPartner(e, el) { const inp = $('[data-addin]', el.closest('.addrow')); const v = inp.value.trim(); if (!v) { inp.focus(); return; } inp.value = ''; S.focus = 'partners'; await add('partners', { name: v, desc: '', kind: 'support', status: 0, next: '' }); },
+  async addPartnerPreset(e) { await add('partners', { name: e.name, desc: '', kind: 'support', status: 0, next: '' }); },
+  setf(e) { patch(e.col, e.id, { [e.f]: e.num ? +e.v : e.v }, 0); },
   takeDriver() { DB.collection('meta').doc('session').set({ driverUid: ME.id, groupStep: S.step }, { merge: true }).catch(e => writeError(e, 'meta')); toast('עכשיו אתם ממלאים'); },
   followOn() { S.follow = true; const gs = M('groupStep'); if (gs != null) { S.step = gs; lsSet(WS_KEY, S.step); } if (ROOM) ROOM.presence({ step: S.step }).catch(() => {}); render(); scrollTo(0, 0); },
   setGroup(e) { patch('meta', 'session', { groupStep: +e.i }, 0); toast('הוצג לכל המשתתפים'); },
@@ -1168,7 +1290,7 @@ document.addEventListener('click', ev => {
 document.addEventListener('keydown', ev => {
   const t = ev.target;
   if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter' && t.matches && t.matches('[data-addin="sugg"]')) { ev.preventDefault(); ACT.addSugg(); return; }
-  if (ev.key === 'Enter' && t.tagName === 'INPUT' && t.matches && t.matches('[data-addin]')) { ev.preventDefault(); $('[data-act="add"]', t.closest('.addrow')).click(); }
+  if (ev.key === 'Enter' && t.tagName === 'INPUT' && t.matches && t.matches('[data-addin]')) { ev.preventDefault(); const b = $('button[data-act]', t.closest('.addrow')); if (b) b.click(); }
   if ((ev.key === 'Enter' || ev.key === ' ') && t.matches && t.matches('.node.pick')) { ev.preventDefault(); t.click(); }
   if (ev.key === 'Enter' && !ev.shiftKey && t.matches && t.matches('textarea[data-f]') && !t.classList.contains('big') && !t.closest('.guide')) { ev.preventDefault(); t.blur(); }
 });
@@ -1177,7 +1299,7 @@ document.addEventListener('input', ev => {
   if (el.id === 'ideaText') { S.draftIdea.text = el.value; autosize(el); return; }
   if (el.dataset && el.dataset.addin === 'sugg') { S.draftSugg.text = el.value; autosize(el); return; }
   if (!el.dataset || !el.dataset.f) return;
-  patch(el.dataset.col, el.dataset.id, nest(el.dataset.f, el.value));
+  patch(el.dataset.col, el.dataset.id, nest(el.dataset.f, el.dataset.num ? (el.value === '' ? 0 : +el.value) : el.value));
   autosize(el);
   if (el.dataset.f.startsWith('def.')) { const d = $('.defbox .sent'); if (d) d.innerHTML = defSentence(); }
 });

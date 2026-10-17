@@ -244,3 +244,10 @@ iframe.ws{width:100%;height:calc(100vh - 200px);min-height:640px;border:0;border
 .item .btn:not(.pri),.card .btn:not(.pri):not(.lt){background:var(--frame)}
 .item .btn:not(.pri):hover,.card .btn:not(.pri):not(.lt):hover{background:var(--blue);color:var(--on)}
 .item .btn:disabled:hover{background:var(--frame);color:var(--blue)}
+.cities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.city{border:0;border-radius:var(--R);background:var(--page);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--blue);font-size:17px}
+.city:hover{outline:2px solid var(--blue)}
+.city .cdot{width:44px;height:44px;border-radius:50%;background:var(--frame);display:grid;place-items:center;font-weight:900;font-size:20px}
+.city.on{background:var(--blue);color:var(--on)}
+.city.on .cdot{background:var(--on);color:var(--blue)}
+@media (max-width:420px){.cities{grid-template-columns:1fr}.city{flex-direction:row;justify-content:flex-start;padding:10px 16px}}

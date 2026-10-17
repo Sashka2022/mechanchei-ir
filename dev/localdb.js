@@ -1,4 +1,4 @@
-/* מצב הדגמה מקומי: מחקה את הממשק של Firestore (compat) ושל Firebase Auth מעל localStorage.
+/* מנוע בדיקות למפתחים בלבד (לא חלק מהאפליקציה שעובדת בענן): מחקה את הממשק של Firestore (compat) ושל Firebase Auth מעל localStorage.
    כל הקוד של האפליקציה כתוב מול הממשק הזה, כך שמעבר ל-Firebase אמיתי לא משנה שורת קוד באפליקציה.
    לא מיועד לעבודה אמיתית: הנתונים נשארים בדפדפן הזה בלבד, ואין בו אבטחה. */
 
@@ -31,7 +31,7 @@ export function createLocalDb() {
   const colSnap = (path, filters = []) => {
     const m = data[path] || {};
     const docs = Object.keys(m)
-      .filter(id => filters.every(([f, v]) => m[id] && m[id][f] === v))
+      .filter(id => filters.every(([f, op, v]) => m[id] && (op === 'array-contains' ? Array.isArray(m[id][f]) && m[id][f].includes(v) : m[id][f] === v)))
       .map(id => docSnap(path, id));
     return { docs, size: docs.length, empty: !docs.length, forEach: fn => docs.forEach(fn) };
   };
@@ -73,7 +73,7 @@ export function createLocalDb() {
       path,
       doc: id => docRef(path, id || rid()),
       add: async d => { const r = docRef(path, rid()); await r.set(d); return r; },
-      where: (f, op, v) => { if (op !== '==') throw new Error('local db: only == is supported'); return colRef(path, [...filters, [f, v]]); },
+      where: (f, op, v) => { if (op !== '==' && op !== 'array-contains') throw new Error('local db: only == and array-contains are supported'); return colRef(path, [...filters, [f, op, v]]); },
       get: async () => colSnap(path, filters),
       onSnapshot: (fn, err) => listen(path, () => fn(colSnap(path, filters)))
     };
@@ -94,8 +94,8 @@ export function createLocalAuth() {
     currentUser: toUser(session()),
     onAuthStateChanged(fn) { listeners.add(fn); setTimeout(() => fn(auth.currentUser), 0); return () => listeners.delete(fn); },
     async signOut() { lsSet(SESSION_KEY, 'null'); auth.currentUser = null; listeners.forEach(f => f(null)); },
-    /* כניסת מנהל/ת בהדגמה: אימייל ושם, בלי סיסמה */
-    async demoManagerSignIn(email, name) {
+    /* כניסת מנהל/ת בבדיקות: אימייל ושם, בלי סיסמה */
+    async devManagerSignIn(email, name) {
       const e = String(email || '').trim().toLowerCase(); if (!e) throw new Error('missing-email');
       const u = users(); if (!u[e]) u[e] = { uid: 'm' + rid(), email: e, name: name || e.split('@')[0] };
       if (name) u[e].name = name; saveUsers(u);

@@ -5,15 +5,23 @@ import { CITIES, newCode, showCode } from '../model.js';
 
 export function mountAdmin(root, { user, sup, go }) {
   const db = store.db;
+  async function createGroup(ref, name, city, code) {
+    const email = (user.email || '').toLowerCase();
+    await ref.set({ name, city, code, ownerUid: user.uid, ownerEmail: email, ownerName: user.displayName || user.email || '', managerEmails: email ? [email] : [], published: false, createdAt: Date.now() });
+    await db.doc('joinCodes/' + code).set({ gid: ref.id, city });
+    return ref.id;
+  }
   return createView(root, {
     watch: (st, sub) => {
       const col = db.collection('groups');
-      sub('groups', sup ? col : col.where('ownerUid', '==', user.uid), docs);
+      sub('groups', sup ? col : col.where('managerEmails', 'array-contains', (user.email || '').toLowerCase()), docs);
       if (sup && store.mode === 'firebase') sub('managers', db.collection('managers'), docs);
     },
     render: st => {
       const gs = (st.data.groups || []).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      const mine = gs.filter(g => g.ownerUid === user.uid), others = gs.filter(g => g.ownerUid !== user.uid);
+      const me = (user.email || '').toLowerCase(), isMine = g => g.ownerUid === user.uid || (g.managerEmails || []).includes(me);
+      const mine = gs.filter(isMine), others = gs.filter(g => !isMine(g));
+      const missing = CITIES.filter(c => !gs.some(g => g.city === c));
       const card = g => `<a class="card gcard" href="#/g/${g.id}"><div class="pill ${g.published ? '' : 'p'}">${g.published ? 'פורסם למשתתפים' : 'טיוטה'}</div>
         <h3 class="s" style="margin-top:10px">${esc(g.name)}</h3><div class="hint">${esc(g.city || '')}${g.ownerName && g.ownerUid !== user.uid ? ' · ' + esc(g.ownerName) : ''}</div>
         <div class="row" style="margin-top:12px"><span class="chip">קוד · <b dir="ltr">${showCode(g.code)}</b></span></div></a>`;
@@ -23,10 +31,12 @@ export function mountAdmin(root, { user, sup, go }) {
         <section class="fr"><h3 class="s">קבוצה חדשה</h3>
           <form id="newGroup" class="stack" style="gap:12px;margin-top:12px;max-width:560px">
             <div><label class="l" for="gn">שם הקבוצה</label><input class="in" id="gn" name="name" required maxlength="80" placeholder="לדוגמה: מחנכי עיר חיפה · מחזור ג׳"></div>
-            <div><label class="l" for="gc">עיר</label><input class="in" id="gc" name="city" list="cities" required maxlength="40" placeholder="בחרו או כתבו עיר"><datalist id="cities">${CITIES.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+            <div><label class="l" for="gc">עיר</label><select class="in" id="gc" name="city" required>${CITIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div>
             <div class="row"><button class="btn pri" type="submit">יצירת קבוצה</button></div></form></section>
         ${others.length ? `<section class="fr"><h3 class="s">קבוצות של מנהלים אחרים</h3><div class="igrid" style="margin-top:12px">${others.map(card).join('')}</div></section>` : ''}
-        ${sup ? managersHTML(st) : ''}`;
+        ${sup && missing.length ? `<section class="fr"><h3 class="s">קבוצות הערים</h3><p class="hint" style="margin:4px 0 14px">בעמוד הפתיחה המשתתפים בוחרים בין שלוש הערים. עוד אין קבוצה ל: ${missing.map(esc).join(', ')}.</p><button class="btn pri" data-act="seedCities">פתיחת קבוצות לערים החסרות</button></section>` : ''}
+        ${sup ? managersHTML(st) : ''}
+        ${store.mode === 'firebase' ? `<section class="fr"><h3 class="s">בדיקת חיבור לענן</h3><p class="hint" style="margin:4px 0 14px">כותב ומחזיר מסמך בדיקה מהשרת, כדי לוודא שהנתונים באמת נשמרים בענן.</p><div class="row"><button class="btn" data-act="health">בדיקה</button><span id="healthOut" role="status"></span></div></section>` : ''}`;
     },
     after: (st, el) => {
       const f = el.querySelector('#newGroup');
@@ -35,8 +45,7 @@ export function mountAdmin(root, { user, sup, go }) {
         const d = Object.fromEntries(new FormData(f).entries());
         try {
           const ref = db.collection('groups').doc(), code = newCode();
-          await ref.set({ name: d.name.trim(), city: d.city.trim(), code, ownerUid: user.uid, ownerEmail: user.email || '', ownerName: user.displayName || user.email || '', published: false, createdAt: Date.now() });
-          await db.doc('joinCodes/' + code).set({ gid: ref.id });
+          await createGroup(ref, d.name.trim(), d.city.trim(), code);
           go('/g/' + ref.id);
         } catch (x) { toast('יצירת הקבוצה נכשלה'); btn.disabled = false; }
       };
@@ -49,6 +58,21 @@ export function mountAdmin(root, { user, sup, go }) {
       };
     },
     acts: {
+      async seedCities(d, el, st) {
+        el.disabled = true;
+        try { for (const c of CITIES.filter(c => !(st.data.groups || []).some(g => g.city === c))) await createGroup(db.collection('groups').doc(), 'מחנכי עיר ' + c, c, newCode()); toast('הקבוצות נפתחו'); }
+        catch (x) { toast('הפתיחה נכשלה'); el.disabled = false; }
+      },
+      async health(d, el) {
+        const out = root.querySelector('#healthOut'); out.textContent = 'בודק...'; el.disabled = true;
+        try {
+          const ref = db.doc('_health/' + user.uid), stamp = Date.now();
+          await ref.set({ stamp, by: user.uid });
+          const back = await ref.get({ source: 'server' });
+          out.textContent = back.exists && back.data().stamp === stamp ? '✓ הנתונים נכתבים לענן ונקראים ממנו' : 'הכתיבה לא אומתה בשרת';
+        } catch (x) { out.textContent = 'נכשל: ' + (x.code || x.message); }
+        el.disabled = false;
+      },
       async rmMgr(d) { if (await confirmDialog('להסיר את ' + d.email + ' מרשימת המנהלים? הקבוצות שלו.ה יישארו.', 'הסרה')) db.doc('managers/' + d.email).delete(); }
     }
   });

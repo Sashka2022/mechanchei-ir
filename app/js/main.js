@@ -42,10 +42,11 @@ function shell(ctx, active) {
   const tabs = mgr
     ? [['', 'בית'], ['syllabus', 'סילבוס'], ['initiative', 'הובלת יוזמה'], ['people', 'משתתפים'], ['settings', 'הגדרות']]
     : [['', 'בית'], ['journey', 'מסע התחנות'], ['initiative', 'הובלת יוזמה']];
-  return `${store.mode === 'local' ? `<div class="notice deep"><b>מצב הדגמה מקומי</b><span>הנתונים נשמרים בדפדפן הזה בלבד. כדי לעבוד בפועל עם משתתפים, ממלאים את FIREBASE_CONFIG בקובץ app/js/config.js (ראו SETUP.md).</span></div>` : ''}
+  return `${store.mode === 'local' ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
   <header class="fr top"><a href="#/" aria-label="לדף הבית"><img class="logo" src="../assets/hotam-logo-hebrew.png" alt="חותם"></a>
     <div class="name grow">מחנכי עיר · ${esc(g.name)}<small>${esc(g.city || '')}${mgr ? ' · מנהל.ת קבוצה' : ' · משתתף.ת'}</small></div>
     ${mgr ? `<a class="btn sm" href="#/admin">כל הקבוצות שלי</a>` : ''}
+    <span class="chip" title="${store.mode === 'firebase' ? 'הנתונים נשמרים בענן ומשותפים בזמן אמת' : 'הנתונים נשמרים בדפדפן הזה בלבד'}">${store.mode === 'firebase' ? '☁ נשמר בענן' : 'בדיקות מקומי'}</span>
     <span class="chip">${esc(ctx.me.name || 'אני')}</span>
     <button class="btn sm" data-global="signout">יציאה</button></header>
   <nav class="fr tabs" aria-label="ניווט ראשי">${tabs.map(([p, l]) => `<a class="tab ${active === p ? 'on' : ''}" href="#/g/${ctx.gid}${p ? '/' + p : ''}">${l}</a>`).join('')}</nav>
@@ -79,7 +80,7 @@ async function route() {
       lsSet(LAST_KEY, null);
       setMain(`<section class="fr"><h2 class="t">הקבוצה לא נמצאה</h2><p class="lede" style="margin:12px 0 18px">אין לכם גישה לקבוצה הזו, או שהיא לא קיימת.</p><a class="btn pri" href="#/">חזרה לכניסה</a></section>`); return;
     }
-    const isManager = mgr.ok && (group.ownerUid === user.uid || mgr.sup);
+    const isManager = mgr.ok && (group.ownerUid === user.uid || mgr.sup || (group.managerEmails || []).includes((user.email || '').toLowerCase()));
     let me = { uid: user.uid, name: user.displayName || user.email || '' };
     if (!isManager) {
       let m; try { m = await store.db.doc(`groups/${gid}/members/${user.uid}`).get(); } catch (e) { m = null; }
@@ -127,7 +128,10 @@ addEventListener('hashchange', () => { if (bootDone) route(); });
     await store.authState();
     store.auth.onAuthStateChanged(u => { if (bootDone && !u) route(); });
   } catch (e) {
-    app.innerHTML = `<section class="fr"><h2 class="t">לא הצלחנו להתחבר לשרת</h2><p class="lede">${esc(e.message || e)}</p></section>`; return;
+    app.innerHTML = e.code === 'not-configured'
+      ? `<section class="fr"><div class="eyebrow">חותם · מחנכי עיר</div><h2 class="t">האפליקציה עוד לא מחוברת לענן</h2><p class="lede" style="margin:12px 0">כדי שהנתונים יישמרו וישותפו בין כולם, צריך לחבר אותה ל-Firebase. מנהל.ת האפליקציה ממלא.ת את הקונפיגורציה לפי SETUP.md.</p></section>`
+      : `<section class="fr"><h2 class="t">לא הצלחנו להתחבר לשרת</h2><p class="lede">${esc(e.message || e)}</p></section>`;
+    return;
   }
   bootDone = true; route();
 })();

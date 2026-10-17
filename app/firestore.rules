@@ -8,7 +8,7 @@ service cloud.firestore {
     function isSuper() { return verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il']; }
     function isManager() { return isSuper() || (verifiedEmail() && exists(/databases/$(database)/documents/managers/$(request.auth.token.email.lower()))); }
     function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
-    function isOwner(gid) { return isManager() && (isSuper() || grp(gid).ownerUid == request.auth.uid); }
+    function isOwner(gid) { return isManager() && (isSuper() || grp(gid).ownerUid == request.auth.uid || request.auth.token.email.lower() in grp(gid).get('managerEmails', [])); }
     function isMember(gid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)); }
     function inTeam(gid, tid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/teams/$(tid)/roster/$(request.auth.uid)); }
 
@@ -25,9 +25,14 @@ service cloud.firestore {
       allow update, delete: if isManager() && isOwner(resource.data.gid);
     }
 
+    // בדיקת חיבור לענן (דף ניהול הקבוצות)
+    match /_health/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
     match /groups/{gid} {
       allow get: if isOwner(gid) || isMember(gid);
-      allow list: if isSuper() || (isManager() && resource.data.ownerUid == request.auth.uid);
+      allow list: if isSuper() || (isManager() && request.auth.token.email.lower() in resource.data.managerEmails);
       allow create: if isManager() && request.resource.data.ownerUid == request.auth.uid;
       allow update, delete: if isOwner(gid);
 

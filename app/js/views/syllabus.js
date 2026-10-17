@@ -2,7 +2,7 @@
    וקישור לשלב בתהליך הובלת היוזמה שעובדים עליו באותה תחנה. */
 import { store } from '../store.js';
 import { esc, toast, confirmDialog, createView, docs, docData, byOrder } from '../ui.js';
-import { fmtDate, STATION_TEMPLATE, WS_STEPS, wsLabel } from '../model.js';
+import { fmtDate, WS_STEPS, wsLabel } from '../model.js';
 
 const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
 const parseReadings = s => lines(s).map(l => { const [t, ...u] = l.split('|'); const url = u.join('|').trim(); return url ? { title: t.trim(), url } : { title: t.trim(), url: '' }; });
@@ -34,8 +34,8 @@ export function mountSyllabus(root, ctx) {
         <div class="row" style="margin-top:16px"><span class="pill ${g.published ? '' : 'p'}">${g.published ? 'פורסם למשתתפים' : 'טיוטה, המשתתפים לא רואים'}</span>
           <button class="btn sm ${g.published ? '' : 'pri'}" data-act="publish">${g.published ? 'החזרה לטיוטה' : 'פרסום למשתתפים'}</button>
           ${list.length ? `<a class="btn sm" href="#/g/${gid}/journey">תצוגת משתתפים</a>` : ''}</div></section>
-        <section class="fr"><div class="list">${list.length ? list.map(row).join('') : `<div class="empty"><b>הסילבוס ריק</b>הוסיפו תחנה, או התחילו מתבנית מסע התחנות של מחנכי עיר ותתאימו אותה לעיר שלכם.</div>`}</div>
-          ${ed === 'new' ? `<div style="margin-top:14px">${editor(null)}</div>` : `<div class="row" style="margin-top:14px"><button class="btn pri" data-act="add">+ תחנה חדשה</button>${list.length ? '' : '<button class="btn" data-act="template">טעינת תבנית מחנכי עיר (11 תחנות)</button>'}</div>`}</section>`;
+        <section class="fr"><div class="list">${list.length ? list.map(row).join('') : `<div class="empty"><b>הסילבוס ריק</b>הוסיפו את התחנה הראשונה של המסע.</div>`}</div>
+          ${ed === 'new' ? `<div style="margin-top:14px">${editor(null)}</div>` : `<div class="row" style="margin-top:14px"><button class="btn pri" data-act="add">+ תחנה חדשה</button></div>`}</section>`;
     },
     after: (st, el) => {
       el.querySelectorAll('form.editor').forEach(f => f.onsubmit = async e => {
@@ -56,12 +56,7 @@ export function mountSyllabus(root, ctx) {
       async del(d) { if (await confirmDialog('למחוק את התחנה? אי אפשר לשחזר.', 'מחיקה')) db.doc(`${base}/stations/${d.id}`).delete(); },
       async publish(d, el, st) { const g = st.data.group || ctx.group; await db.doc(base).set({ published: !g.published }, { merge: true }); toast(g.published ? 'הסילבוס חזר לטיוטה' : 'הסילבוס פורסם למשתתפים'); },
       async up(d, el, st) { await swap(st, d.id, -1); },
-      async down(d, el, st) { await swap(st, d.id, 1); },
-      async template(d, el, st) {
-        const col = db.collection(base + '/stations');
-        for (let i = 0; i < STATION_TEMPLATE.length; i++) await col.doc().set({ title: STATION_TEMPLATE[i][0], description: STATION_TEMPLATE[i][1], place: '', date: '', time: '', prep: [], readings: [], step: '', order: i + 1 });
-        toast('התבנית נטענה. עכשיו מתאימים תחנה אחרי תחנה');
-      }
+      async down(d, el, st) { await swap(st, d.id, 1); }
     }
   });
 
