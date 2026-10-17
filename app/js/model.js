@@ -32,6 +32,8 @@ export const STAGES = [
 ];
 
 export const LIB_CATS = ['יזמות', 'מנהיגות', 'הוגנות', 'סוגיות חינוכיות', 'נתוני העיר'];
+/* קוד קבוצת ההדגמה: 4 ספרות, נכנסים איתו לקבוצת בדיקה פתוחה (נוצרת על ידי מנהל.ת על בדף ״הקבוצות שלי״). */
+export const DEMO_CODE = '1111';
 export const LAST_KEY = 'mhi-last-group';
 export const CITIES = ['חיפה', 'בת ים', 'מרום הגליל'];
 export const CITY_LOGOS = { 'חיפה': 'haifa', 'בת ים': 'bat-yam', 'מרום הגליל': 'merom-hagalil' };

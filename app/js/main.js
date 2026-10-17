@@ -43,7 +43,8 @@ function shell(ctx, active) {
   const tabs = mgr
     ? [['', 'בית'], ['syllabus', 'סילבוס'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה'], ['people', 'משתתפים'], ['settings', 'הגדרות']]
     : [['', 'בית'], ['journey', 'מסע התחנות'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה']];
-  return `${store.mode === 'local' ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
+  return `${g.demo ? `<div class="notice purple"><b>קבוצת הדגמה</b><span>כל מי שמכיר את הקוד נכנס לכאן, והנתונים פתוחים לכולם. אין לשים כאן מידע אמיתי.</span></div>` : ''}
+  ${store.mode === 'local' ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
   <header class="fr top"><a href="#/" aria-label="לדף הבית"><img class="logo" src="../assets/hotam-logo-hebrew.png" alt="חותם"></a>
     <div class="name grow">מחנכי עיר · ${esc(g.name)}<small>${esc(g.city || '')}${mgr ? ' · מנהל.ת קבוצה' : ' · משתתף.ת'}</small></div>
     ${mgr ? `<a class="btn sm" href="#/admin">כל הקבוצות שלי</a>` : ''}

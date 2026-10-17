@@ -1,7 +1,7 @@
 /* דף כניסה: שלוש קבוצות הערים בולטות במרכז (כניסה בקוד קבוצה ושם), וכניסת מנהלים באייקון בפינה. */
 import { store } from '../store.js';
 import { esc } from '../ui.js';
-import { normCode, LAST_KEY, CITIES, CITY_LOGOS } from '../model.js';
+import { normCode, LAST_KEY, CITIES, CITY_LOGOS, DEMO_CODE } from '../model.js';
 
 const ADMIN_ICON = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 9.5C8 19.2 5 15.5 5 11V6l7-3z"/><circle cx="12" cy="10" r="2.4"/><path d="M8 16c.8-2 2.4-3 4-3s3.2 1 4 3"/></svg>`;
 
@@ -51,13 +51,13 @@ export function mountLanding(root, { go }) {
     root.querySelector('#jimg').src = `assets/cities/${CITY_LOGOS[city]}.webp`;
     jerr.textContent = ''; joinDlg.showModal(); jc.focus();
   }));
-  jc.addEventListener('input', () => { const c = normCode(jc.value).slice(0, 6); jc.value = c.length > 3 ? c.slice(0, 3) + '-' + c.slice(3) : c; });
+  jc.addEventListener('input', () => { const c = normCode(jc.value).slice(0, 6); jc.value = c && DEMO_CODE.startsWith(c) ? c : c.length > 3 ? c.slice(0, 3) + '-' + c.slice(3) : c; });
 
   root.querySelector('#joinForm').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = e.submitter; jerr.textContent = '';
     const code = normCode(jc.value), name = root.querySelector('#jn').value.trim();
-    if (code.length !== 6 || !name) { jerr.textContent = 'צריך קוד בן 6 תווים ושם'; return; }
+    if ((code.length !== 6 && code !== DEMO_CODE) || !name) { jerr.textContent = 'צריך קוד בן 6 תווים ושם'; return; }
     btn.disabled = true;
     try {
       const u = await store.signInParticipant();

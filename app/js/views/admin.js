@@ -1,7 +1,7 @@
 /* אזור מנהלי קבוצות: הקבוצות שלי + יצירת קבוצה. למנהל.ת על: גם ניהול רשימת המנהלים המורשים. */
 import { store } from '../store.js';
 import { esc, toast, confirmDialog, createView, docs } from '../ui.js';
-import { CITIES, newCode, showCode } from '../model.js';
+import { CITIES, newCode, showCode, DEMO_CODE } from '../model.js';
 
 export function mountAdmin(root, { user, sup, go }) {
   const db = store.db;
@@ -10,6 +10,21 @@ export function mountAdmin(root, { user, sup, go }) {
     await ref.set({ name, city, code, ownerUid: user.uid, ownerEmail: email, ownerName: user.displayName || user.email || '', managerEmails: email ? [email] : [], published: false, createdAt: Date.now() });
     await db.doc('joinCodes/' + code).set({ gid: ref.id, city });
     return ref.id;
+  }
+  /* קבוצת הדגמה פתוחה: קוד 1111, סילבוס וספרייה לדוגמה, מפורסמת. הקוד לא קשור לעיר, אז עובד מכל כרטיס עיר. */
+  async function createDemo() {
+    const email = (user.email || '').toLowerCase(), ref = db.doc('groups/demo'), day = n => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+    await ref.set({ name: 'קבוצת הדגמה', city: 'חיפה', code: DEMO_CODE, demo: true, ownerUid: user.uid, ownerEmail: email, ownerName: user.displayName || user.email || '', managerEmails: email ? [email] : [], published: true, createdAt: Date.now() });
+    await db.doc('joinCodes/' + DEMO_CODE).set({ gid: 'demo', city: '' });
+    const st = [
+      ['פתיחת המסע ושאלת המוצא', 'מפגש פתיחה: מכירים את הקבוצה, את העיר ואת התהליך.', 'בית הקבוצה', ['מה הייתם רוצים להשתנות בעיר?', 'מי בעיר יכול ללמד אתכם משהו שלא למדתם?'], '', 1],
+      ['סיור בשכונה והתבוננות', 'הולכים ברגל, מתבוננים, ומתעדים מה רואים ומה חסר.', 'השכונה', ['מה תבדקו בדרך?', 'איזו תופעה תרצו להבין לעומק?'], 'phen', 8],
+      ['עץ הבעיה בצוותים', 'כל צוות חופר לשורשי תופעה אחת ומתמקד בנתיב קריטי.', 'חדר הלמידה', ['איזו תופעה בחרתם?', 'מה הגורמים שאתם חושבים שחשובים?'], 'tree', 15],
+      ['רעיונות לפתרון ובחירת פיילוט', 'מפתחים רעיונות, מצביעים ובוחרים מה מנסים קודם.', 'חדר הלמידה', ['איזה רעיון אתם רוצים לנסות?'], 'ideas', 22]
+    ];
+    for (let i = 0; i < st.length; i++) { const [title, description, place, prep, step, off] = st[i]; await ref.collection('stations').doc('d' + (i + 1)).set({ title, description, place, prep, step, date: day(off), time: '16:00 עד 19:00', readings: [], order: i + 1 }); }
+    const lib = [['מדריך קצר ליזמות חברתית', 'יזמות', 'פתיח לפני התחנה הראשונה'], ['על מנהיגות מקומית', 'מנהיגות', 'סיפור של מי שהתחיל מהשכונה'], ['נתוני העיר במבט אחד', 'נתוני העיר', 'מספרים שכדאי להכיר לפני הסיור']];
+    try { for (let i = 0; i < lib.length; i++) await ref.collection('library').doc('d' + (i + 1)).set({ title: lib[i][0], category: lib[i][1], note: lib[i][2], url: '', order: i + 1, createdAt: Date.now() }); } catch (x) { /* כללי הספרייה עוד לא פורסמו: ההדגמה עובדת גם בלי */ }
   }
   return createView(root, {
     watch: (st, sub) => {
@@ -35,6 +50,7 @@ export function mountAdmin(root, { user, sup, go }) {
             <div class="row"><button class="btn pri" type="submit">יצירת קבוצה</button></div></form></section>
         ${others.length ? `<section class="fr"><h3 class="s">קבוצות של מנהלים אחרים</h3><div class="igrid" style="margin-top:12px">${others.map(card).join('')}</div></section>` : ''}
         ${sup && missing.length ? `<section class="fr"><h3 class="s">קבוצות הערים</h3><p class="hint" style="margin:4px 0 14px">בעמוד הפתיחה המשתתפים בוחרים בין שלוש הערים. עוד אין קבוצה ל: ${missing.map(esc).join(', ')}.</p><button class="btn pri" data-act="seedCities">פתיחת קבוצות לערים החסרות</button></section>` : ''}
+        ${sup ? demoHTML(gs) : ''}
         ${sup ? managersHTML(st) : ''}
         ${store.mode === 'firebase' ? `<section class="fr"><h3 class="s">בדיקת חיבור לענן</h3><p class="hint" style="margin:4px 0 14px">כותב ומחזיר מסמך בדיקה מהשרת, כדי לוודא שהנתונים באמת נשמרים בענן.</p><div class="row"><button class="btn" data-act="health">בדיקה</button><span id="healthOut" role="status"></span></div></section>` : ''}`;
     },
@@ -73,6 +89,11 @@ export function mountAdmin(root, { user, sup, go }) {
         } catch (x) { out.textContent = 'נכשל: ' + (x.code || x.message); }
         el.disabled = false;
       },
+      async seedDemo(d, el) {
+        el.disabled = true;
+        try { await createDemo(); toast('קבוצת ההדגמה נוצרה'); }
+        catch (x) { toast('היצירה נכשלה: ' + (x.code || 'שגיאה')); el.disabled = false; }
+      },
       async rmMgr(d) { if (await confirmDialog('להסיר את ' + d.email + ' מרשימת המנהלים? הקבוצות שלו.ה יישארו.', 'הסרה')) db.doc('managers/' + d.email).delete(); }
     }
   });
@@ -84,4 +105,11 @@ function managersHTML(st) {
   return `<section class="fr"><h3 class="s">מנהלי קבוצות מורשים</h3><p class="hint" style="margin:4px 0 14px">רק מי שנמצא.ת ברשימה יכול.ה להיכנס בחשבון Google ולפתוח קבוצה. הוסיפו את כתובת המייל שבה הם נכנסים ל-Google.</p>
     <div class="list">${ms.length ? ms.map(m => `<div class="item"><div class="grow" style="padding:8px 10px"><b>${esc(m.name || m.email)}</b><div class="hint" dir="ltr" style="text-align:end">${esc(m.email)}</div></div><button class="rm" data-act="rmMgr" data-email="${esc(m.email)}" aria-label="הסרה"></button></div>`).join('') : '<div class="empty"><b>עוד לא נוספו מנהלים</b>רק מנהלי העל יכולים להיכנס כרגע.</div>'}</div>
     <form id="addMgr" class="addrow"><input class="in" name="email" type="email" required placeholder="מייל של מנהל.ת קבוצה" dir="ltr"><input class="in" name="mname" placeholder="שם (לא חובה)"><button class="btn pri" type="submit">הוספה</button></form></section>`;
+}
+
+function demoHTML(gs) {
+  const g = gs.find(x => x.demo || x.code === DEMO_CODE);
+  return `<section class="fr"><h3 class="s">קבוצת הדגמה</h3>${g
+    ? `<p class="hint" style="margin:4px 0 14px">כל מי שמקליד.ה <b dir="ltr">${DEMO_CODE}</b> בקוד הקבוצה נכנס.ת לקבוצה הזו וראה.ת את המערכת. הנתונים בה פתוחים לכולם, ולכן אין לשים בה מידע אמיתי.</p><div class="row"><span class="chip">קוד · <b dir="ltr">${DEMO_CODE}</b></span><a class="btn sm" href="#/g/${g.id}">לקבוצת ההדגמה</a></div>`
+    : `<p class="hint" style="margin:4px 0 14px">יוצרת קבוצה פתוחה עם סילבוס וספרייה לדוגמה. הקוד <b dir="ltr">${DEMO_CODE}</b> בעמוד הפתיחה, מכל כרטיס עיר, יכניס אליה כל מי שמכיר אותו, לצורך בדיקה והדגמה.</p><button class="btn pri" data-act="seedDemo">יצירת קבוצת הדגמה (קוד ${DEMO_CODE})</button>`}</section>`;
 }
