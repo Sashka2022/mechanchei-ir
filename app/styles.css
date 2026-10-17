@@ -187,6 +187,8 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .tab.on{background:var(--blue);color:var(--on)}
 a{color:var(--blue)}
 a.btn,a.chp{text-decoration:none}
+.chp{cursor:pointer;transition:background .15s,color .15s}
+a.chp:hover,button.chp:hover{background:var(--blue)!important;color:var(--on)}
 a.btn:hover{color:var(--on)}
 a.btn.pri:hover{color:var(--on)}
 .top .logo{height:36px;width:auto}

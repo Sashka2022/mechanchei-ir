@@ -47,7 +47,8 @@ function mountDashboard(root, ctx) {
           ${sg.steps ? `<div class="chips" style="margin-top:14px">${sg.steps.map(s => {
             const ok = myTeam && myTeam.progress && myTeam.progress[s];
             const body = `${ok ? '✓ ' : ''}${wsLabel(s)}`;
-            return myTeam ? `<a class="chp ${ok ? 'on' : ''}" href="#/g/${gid}/t/${myTeam.id}?step=${s}" title="${esc(stationsFor(s).join(' · '))}">${body}</a>` : `<span class="chp">${body}</span>`;
+            const tgt = myTeam || (isManager && teams[0]);
+            return tgt ? `<a class="chp ${ok ? 'on' : ''}" href="#/g/${gid}/t/${tgt.id}?step=${s}" title="${esc(stationsFor(s).join(' · '))}">${body}</a>` : `<button type="button" class="chp" data-act="needTeam" title="צריך קודם צוות">${body}</button>`;
           }).join('')}</div>` : `<div class="chips" style="margin-top:14px">${sg.soon.map(x => `<span class="chp">${x}</span>`).join('')}</div>`}
           <div class="hint" style="margin-top:12px"><b>התוצר:</b> ${sg.out}</div></div>`;
       };
@@ -65,7 +66,7 @@ function mountDashboard(root, ctx) {
           <p>מגדירים בעיה לפי פרוטוקול הגדרת בעיה, מגיעים לרעיונות ובוחרים פיילוט, ואז בונים תוכנית ואורזים להצגה. כל צוות עובד על יוזמה אחת.</p></div></div></section>
         <section class="fr"><h3 class="s" style="margin-bottom:14px">ארבעה שלבים</h3><div class="grid2">${STAGES.map(stageCard).join('')}</div></section>
         ${pitchGallery(teams, members)}
-        <section class="fr"><div class="row"><h3 class="s grow">צוותי היוזמה בקבוצה</h3></div>
+        <section class="fr" id="teamsSec"><div class="row"><h3 class="s grow">צוותי היוזמה בקבוצה</h3></div>
           ${teams.length ? `<div class="igrid" style="margin-top:14px">${teams.map(tcard).join('')}</div>` : `<div class="empty" style="margin-top:12px"><b>עוד לא נפתח צוות</b>${isManager ? 'משתתפים יפתחו צוותים בעצמם, ואפשר גם לפתוח מכאן.' : 'פתחו את הצוות הראשון, והזמינו חברים להצטרף.'}</div>`}
           <form id="newTeam" class="addrow"><input class="in" name="name" required maxlength="60" placeholder="שם לצוות, או לנושא היוזמה"><button class="btn pri" type="submit">${isManager ? 'פתיחת צוות' : 'פתיחת צוות והצטרפות'}</button></form></section>`;
     },
@@ -82,6 +83,7 @@ function mountDashboard(root, ctx) {
       };
     },
     acts: {
+      needTeam() { toast(isManager ? 'עוד אין צוות לפתוח. פתחו צוות למטה' : 'כדי להיכנס לשלב צריך צוות. פתחו צוות או הצטרפו לצוות קיים'); const t = document.getElementById('teamsSec'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
       async join(d, el, st) { try { await joinTeam(d.id, st); toast('הצטרפתם לצוות'); } catch (x) { toast('ההצטרפות נכשלה'); } },
       async leave(d, el, st) { if (await confirmDialog('לצאת מהצוות? העבודה שלו נשארת, ואפשר להצטרף שוב.', 'יציאה')) { try { await leaveTeam(d.id); } catch (x) { toast('היציאה נכשלה'); } } },
       async delTeam(d) { if (await confirmDialog('למחוק את הצוות? חברי הצוות יוצאו ממנו. נתוני העבודה לא יוצגו יותר.', 'מחיקה')) { try { await db.doc(`${base}/teams/${d.id}`).delete(); toast('הצוות נמחק'); } catch (x) { toast('המחיקה נכשלה'); } } }
