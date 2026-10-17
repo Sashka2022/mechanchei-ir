@@ -698,7 +698,7 @@ function reportProgress() {
   progress.pilot = list('ideas').some(i => V('ideas', i.id, 'star'));
   progress.plan = ['toc', 'budget', 'partners'].every(done);
   const c = M('def.cause'), p = M('def.phen'), k = M('def.cons');
-  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', ideasCount: list('ideas').length, budgetTotal: budgetTotal(), updatedAt: Date.now() };
+  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', ideasCount: list('ideas').length, budgetTotal: budgetTotal(), pitchTitle: (PV('title') || '').trim(), pitchTagline: (PV('tagline') || '').trim(), pitchHook: (PV('hook') || '').trim(), updatedAt: Date.now() };
   const key = JSON.stringify({ ...rep, updatedAt: 0 }); if (key === lastReport) return; lastReport = key;
   HOST.report(rep).catch(() => {});
 }

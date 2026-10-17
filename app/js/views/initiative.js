@@ -64,6 +64,7 @@ function mountDashboard(root, ctx) {
       return `<section class="fr"><div class="sh"><div class="grow"><div class="eyebrow">מסלול הובלת יוזמה</div><h2 class="t">מהכאב אל היוזמה</h2>
           <p>מגדירים בעיה לפי פרוטוקול הגדרת בעיה, מגיעים לרעיונות ובוחרים פיילוט, ואז בונים תוכנית ואורזים להצגה. כל צוות עובד על יוזמה אחת.</p></div></div></section>
         <section class="fr"><h3 class="s" style="margin-bottom:14px">ארבעה שלבים</h3><div class="grid2">${STAGES.map(stageCard).join('')}</div></section>
+        ${pitchGallery(teams, members)}
         <section class="fr"><div class="row"><h3 class="s grow">צוותי היוזמה בקבוצה</h3></div>
           ${teams.length ? `<div class="igrid" style="margin-top:14px">${teams.map(tcard).join('')}</div>` : `<div class="empty" style="margin-top:12px"><b>עוד לא נפתח צוות</b>${isManager ? 'משתתפים יפתחו צוותים בעצמם, ואפשר גם לפתוח מכאן.' : 'פתחו את הצוות הראשון, והזמינו חברים להצטרף.'}</div>`}
           <form id="newTeam" class="addrow"><input class="in" name="name" required maxlength="60" placeholder="שם לצוות, או לנושא היוזמה"><button class="btn pri" type="submit">${isManager ? 'פתיחת צוות' : 'פתיחת צוות והצטרפות'}</button></form></section>`;
@@ -97,4 +98,17 @@ function mountDashboard(root, ctx) {
     await myDoc.set({ teamId: null }, { merge: true });
     await db.doc(`${base}/teams/${tid}/roster/${me.uid}`).delete();
   }
+}
+
+/* גלריית פיצ׳ים: כל הצוותים שכתבו שם או משפט מרכזי, ליום ההצגה בסיום. */
+function pitchGallery(teams, members) {
+  const gid = location.hash.split('/')[2];
+  const list = teams.filter(t => t.pitchTitle || t.pitchTagline || (t.progress || {}).pitch);
+  if (!list.length) return '';
+  return `<section class="fr"><div class="row"><h3 class="s grow">גלריית פיצ׳ים</h3><span class="pill ${list.some(t => (t.progress || {}).pitch) ? '' : 'l'}">${list.filter(t => (t.progress || {}).pitch).length} מוכנים</span></div>
+    <p class="hint" style="margin:4px 0 14px">היוזמות של הצוותים. פותחים צוות כדי לצפות בפיצ׳ ולהציג אותו במסך מלא.</p>
+    <div class="igrid">${list.map(t => `<div class="card"><div class="row" style="gap:8px"><span class="pill ${(t.progress || {}).pitch ? '' : 'l'}">${(t.progress || {}).pitch ? 'פיצ׳ מוכן' : 'בכתיבה'}</span><span class="hint">${esc(t.name)}</span></div>
+      <h3 class="s" style="margin-top:8px">${esc(t.pitchTitle || t.name)}</h3>${t.pitchTagline ? `<p style="margin-top:4px">${esc(t.pitchTagline)}</p>` : ''}${t.pitchHook ? `<p class="hint" style="margin-top:8px">״${esc(t.pitchHook)}״</p>` : ''}
+      <div class="chips" style="margin-top:10px">${members.filter(m => m.teamId === t.id).map(m => `<span class="chip">${esc(m.name)}</span>`).join('')}</div>
+      <div class="row" style="margin-top:12px"><a class="btn sm pri" href="#/g/${gid}/t/${t.id}?step=pitch">לפיצ׳ ולהצגה</a></div></div>`).join('')}</div></section>`;
 }

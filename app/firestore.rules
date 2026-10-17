@@ -42,6 +42,12 @@ service cloud.firestore {
         allow write: if isOwner(gid);
       }
 
+      // עדכונים מהמנהל.ת לקבוצה: המנהל.ת כותב.ת, משתתפים קוראים אחרי פרסום
+      match /posts/{pid} {
+        allow read: if isOwner(gid) || (isMember(gid) && grp(gid).published == true);
+        allow write: if isOwner(gid);
+      }
+
       // ספריית השראה: המנהל.ת תמיד, משתתפים רק אחרי פרסום
       match /library/{lid} {
         allow read: if isOwner(gid) || (isMember(gid) && grp(gid).published == true);

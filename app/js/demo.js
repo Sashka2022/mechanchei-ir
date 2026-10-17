@@ -16,5 +16,6 @@ export async function seedDemo(db, user) {
   for (let i = 0; i < st.length; i++) { const [title, description, place, prep, step, off] = st[i]; await db.doc('groups/demo/stations/d' + (i + 1)).set({ title, description, place, prep, step, date: day(off), time: '16:00 עד 19:00', readings: [], order: i + 1 }); }
   const lib = [['מדריך קצר ליזמות חברתית', 'יזמות', 'פתיח לפני התחנה הראשונה'], ['על מנהיגות מקומית', 'מנהיגות', 'סיפור של מי שהתחיל מהשכונה'], ['נתוני העיר במבט אחד', 'נתוני העיר', 'מספרים שכדאי להכיר לפני הסיור']];
   for (let i = 0; i < lib.length; i++) await db.doc('groups/demo/library/d' + (i + 1)).set({ title: lib[i][0], category: lib[i][1], note: lib[i][2], url: '', order: i + 1, createdAt: Date.now() });
+  await db.doc('groups/demo/posts/p1').set({ text: 'ברוכים הבאים למסע. התחנה הראשונה בעוד שבוע, ושאלות ההכנה כבר מחכות בסילבוס.', at: Date.now(), by: 'צוות התוכנית' });
   await db.doc('groups/demo/teams/t1').set({ name: 'צוות לדוגמה', createdBy: user.uid, createdAt: Date.now(), progress: {} });
 }

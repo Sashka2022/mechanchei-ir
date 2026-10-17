@@ -1,6 +1,6 @@
 /* בית: למנהל.ת רשימת הקמה ותמונת מצב; למשתתף.ת התחנה הבאה והצוות שלי. */
 import { store } from '../store.js';
-import { esc, toast, createView, docs, docData, byOrder } from '../ui.js';
+import { esc, toast, confirmDialog, createView, docs, docData, byOrder } from '../ui.js';
 import { fmtDate, showCode, stationStatus, STAGES } from '../model.js';
 
 export function mountHome(root, ctx) {
@@ -10,14 +10,26 @@ export function mountHome(root, ctx) {
       sub('group', db.doc(base), docData);
       sub('stations', db.collection(base + '/stations'), docs);
       sub('teams', db.collection(base + '/teams'), docs);
+      sub('posts', db.collection(base + '/posts'), docs);
       if (isManager) sub('members', db.collection(base + '/members'), docs);
       else { sub('me', db.doc(`${base}/members/${me.uid}`), docData); sub('progress', db.collection(`${base}/members/${me.uid}/progress`), docs); }
     },
     render: st => {
       const g = st.data.group || ctx.group, stations = (st.data.stations || []).sort(byOrder), teams = st.data.teams || [];
-      return isManager ? managerHome(g, stations, teams, st.data.members || [], gid) : memberHome(g, stations, teams, st.data.me, st.data.progress || [], gid);
+      const posts = (st.data.posts || []).sort((a, b) => (b.at || 0) - (a.at || 0));
+      return (isManager ? managerHome(g, stations, teams, st.data.members || [], gid) : memberHome(g, stations, teams, st.data.me, st.data.progress || [], gid)) + postsHTML(posts, isManager);
+    },
+    after: (st, el) => {
+      const f = el.querySelector('#newPost');
+      if (f) f.onsubmit = async e => {
+        e.preventDefault(); const t = f.text.value.trim(); if (!t) return; e.submitter.disabled = true;
+        try { await db.collection(base + '/posts').doc().set({ text: t, at: Date.now(), by: me.name || '' }); f.reset(); toast('העדכון נשלח לקבוצה'); }
+        catch (x) { toast('השליחה נכשלה'); }
+        e.submitter.disabled = false;
+      };
     },
     acts: {
+      async delPost(d) { if (await confirmDialog('למחוק את העדכון?', 'מחיקה')) db.doc(`${base}/posts/${d.id}`).delete(); },
       copyCode(d, el) { navigator.clipboard.writeText(d.code).then(() => toast('הקוד הועתק'), () => toast('ההעתקה נחסמה בדפדפן')); },
       copyLink(d) { navigator.clipboard.writeText(d.v).then(() => toast('הקישור הועתק'), () => toast('ההעתקה נחסמה בדפדפן')); }
     }
@@ -59,4 +71,15 @@ function memberHome(g, stations, teams, meDoc, progress, gid) {
     <section class="fr"><h3 class="s">הובלת היוזמה</h3>${myTeam
       ? `<p class="hint" style="margin:4px 0 12px">הצוות שלכם: <b>${esc(myTeam.name)}</b></p>${teamLine(myTeam, gid)}<div class="row" style="margin-top:14px"><a class="btn pri" href="#/g/${gid}/t/${myTeam.id}">לכניסה למרחב העבודה</a></div>`
       : `<p style="margin:6px 0 14px">יוזמה מובילים בצוות. פתחו צוות חדש או הצטרפו לצוות שכבר קיים.</p><a class="btn pri" href="#/g/${gid}/initiative">לבחירת צוות</a>`}</section>`;
+}
+
+/* עדכונים מהמנהל.ת: מנהל.ת כותב.ת, כולם קוראים. שלושת האחרונים מוצגים, והישנים מתקפלים. */
+const fmtPost = at => new Date(at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+function postsHTML(posts, isManager) {
+  if (!isManager && !posts.length) return '';
+  const row = p => `<div class="item"><div class="grow" style="padding:8px 10px"><div class="hint" style="font-weight:700">${esc(fmtPost(p.at || Date.now()))}${p.by ? ' · ' + esc(p.by) : ''}</div><div style="white-space:pre-line;margin-top:2px">${esc(p.text)}</div></div>${isManager ? `<button class="rm" data-act="delPost" data-id="${p.id}" aria-label="מחיקת העדכון"></button>` : ''}</div>`;
+  return `<section class="fr"><h3 class="s">${isManager ? 'עדכונים לקבוצה' : 'עדכונים מהמנהל.ת'}</h3>
+    ${isManager ? `<form id="newPost" class="stack" style="gap:10px;margin:12px 0"><textarea class="in" name="text" rows="2" maxlength="600" required placeholder="הודעה למשתתפים: שינוי מקום, מה להביא, תזכורת"></textarea><div class="row"><button class="btn pri" type="submit">שליחה לקבוצה</button></div></form>` : ''}
+    <div class="list" style="margin-top:12px">${posts.length ? posts.slice(0, 3).map(row).join('') : '<div class="empty"><b>עוד לא נשלח עדכון</b></div>'}</div>
+    ${posts.length > 3 ? `<details class="guide" style="margin-top:12px"><summary>עדכונים קודמים (${posts.length - 3})</summary><div class="list" style="margin-top:12px">${posts.slice(3).map(row).join('')}</div></details>` : ''}</section>`;
 }
