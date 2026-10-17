@@ -12,7 +12,9 @@ const loadScript = src => new Promise((res, rej) => {
 const onLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 try { const dv = new URLSearchParams(location.search).get('dev'); if (onLocalhost && dv === '1') localStorage.setItem('mhi-dev', '1'); else if (onLocalhost && dv === '0') localStorage.removeItem('mhi-dev'); } catch (e) {}
 const devFlag = (() => { try { return onLocalhost && localStorage.getItem('mhi-dev') === '1'; } catch (e) { return false; } })();
-const mode = devFlag ? 'local' : FIREBASE_CONFIG ? 'firebase' : 'unconfigured';
+/* הקוד 1111 בעמוד הכניסה מדליק מצב הדגמה: אותו מנוע מקומי, בכל דומיין, ובלי שום גישה לענן. */
+const demoFlag = (() => { try { return localStorage.getItem('mhi-demo') === '1'; } catch (e) { return false; } })();
+const mode = devFlag || demoFlag ? 'local' : FIREBASE_CONFIG ? 'firebase' : 'unconfigured';
 let db, auth, googleProvider;
 
 async function init() {
@@ -28,6 +30,7 @@ async function init() {
 
 export const store = {
   mode,
+  demo: demoFlag,
   ready: init(),
   get db() { return db; },
   get auth() { return auth; },

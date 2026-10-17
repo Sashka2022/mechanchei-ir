@@ -11,6 +11,7 @@ import { mountInitiative } from './views/initiative.js';
 import { mountPeople } from './views/people.js';
 import { mountSettings } from './views/settings.js';
 import { mountLibrary } from './views/library.js';
+import { DEMO_KEY, DEMO_USER, seedDemo } from './demo.js';
 
 const app = $('#app');
 let cleanup = null, bootDone = false, routeId = 0;
@@ -43,8 +44,7 @@ function shell(ctx, active) {
   const tabs = mgr
     ? [['', 'בית'], ['syllabus', 'סילבוס'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה'], ['people', 'משתתפים'], ['settings', 'הגדרות']]
     : [['', 'בית'], ['journey', 'מסע התחנות'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה']];
-  return `${g.demo ? `<div class="notice purple"><b>קבוצת הדגמה</b><span>כל מי שמכיר את הקוד נכנס לכאן, והנתונים פתוחים לכולם. אין לשים כאן מידע אמיתי.</span></div>` : ''}
-  ${store.mode === 'local' ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
+  return `${store.mode === 'local' ? (store.demo ? `<div class="notice purple"><b>מצב הדגמה</b><span>מנהל.ת בסביבת בדיקה. הנתונים נשמרים בדפדפן הזה בלבד, לא בענן, ולא נוגעים בקבוצות האמיתיות.</span></div>` : `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>`) : ''}
   <header class="fr top"><a href="#/" aria-label="לדף הבית"><img class="logo" src="../assets/hotam-logo-hebrew.png" alt="חותם"></a>
     <div class="name grow">מחנכי עיר · ${esc(g.name)}<small>${esc(g.city || '')}${mgr ? ' · מנהל.ת קבוצה' : ' · משתתף.ת'}</small></div>
     ${mgr ? `<a class="btn sm" href="#/admin">כל הקבוצות שלי</a>` : ''}
@@ -120,7 +120,9 @@ function denied(user, mgr) {
 
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-global="signout"]'); if (!b) return;
-  lsSet(LAST_KEY, null); await store.signOut(); go('/');
+  lsSet(LAST_KEY, null); await store.signOut();
+  if (store.demo) { lsSet(DEMO_KEY, null); location.hash = '#/'; location.reload(); return; }
+  go('/');
 });
 addEventListener('hashchange', () => { if (bootDone) route(); });
 
@@ -128,6 +130,11 @@ addEventListener('hashchange', () => { if (bootDone) route(); });
   try {
     await store.ready;
     await store.authState();
+    if (store.demo && !store.user) {   // מצב הדגמה: נכנסים ישר כמנהל.ת, והקבוצה לדוגמה נוצרת בפעם הראשונה
+      const u = await store.signInManager(DEMO_USER.email, DEMO_USER.name);
+      await seedDemo(store.db, u);
+      if (!location.hash || location.hash === '#/') location.hash = '#/g/demo';
+    }
     store.auth.onAuthStateChanged(u => { if (bootDone && !u) route(); });
   } catch (e) {
     app.innerHTML = e.code === 'not-configured'

@@ -28,7 +28,7 @@ export function mountSettings(root, ctx) {
         try {
           const g = st.data.group || ctx.group;
           await db.doc(base).set({ name: f.name.value.trim(), city: f.city.value }, { merge: true });
-          if (!g.demo) await db.doc('joinCodes/' + g.code).set({ gid, city: f.city.value }, { merge: true });
+          await db.doc('joinCodes/' + g.code).set({ gid, city: f.city.value }, { merge: true });
           toast('נשמר');
         } catch (x) { toast('השמירה נכשלה'); }
       };

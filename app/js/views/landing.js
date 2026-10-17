@@ -2,6 +2,7 @@
 import { store } from '../store.js';
 import { esc } from '../ui.js';
 import { normCode, LAST_KEY, CITIES, CITY_LOGOS, DEMO_CODE } from '../model.js';
+import { DEMO_KEY } from '../demo.js';
 
 const ADMIN_ICON = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 9.5C8 19.2 5 15.5 5 11V6l7-3z"/><circle cx="12" cy="10" r="2.4"/><path d="M8 16c.8-2 2.4-3 4-3s3.2 1 4 3"/></svg>`;
 
@@ -23,7 +24,7 @@ export function mountLanding(root, { go }) {
     <form id="joinForm" class="stack" style="gap:14px">
       <div class="jhead"><span class="jlogo"><img id="jimg" alt=""></span><div><div class="hint" style="font-weight:700">כניסה לקבוצה</div><h2 id="joinTitle" class="s" style="font-size:28px;font-weight:900;line-height:1.1"></h2></div></div>
       <div><label class="l" for="jc">קוד הקבוצה</label><input class="in code" id="jc" name="code" autocomplete="off" maxlength="9" placeholder="ABC-123" required></div>
-      <div><label class="l" for="jn">איך נקרא לכם?</label><input class="in" id="jn" name="name" autocomplete="name" maxlength="60" placeholder="שם פרטי ושם משפחה" required></div>
+      <div><label class="l" for="jn">איך נקרא לכם?</label><input class="in" id="jn" name="name" autocomplete="name" maxlength="60" placeholder="שם פרטי ושם משפחה"></div>
       <div class="hint" id="jerr" role="alert" style="min-height:22px"></div>
       <div class="row"><button class="btn pri" type="submit">כניסה</button><button class="btn" type="button" data-close>ביטול</button></div>
     </form></dialog>
@@ -57,7 +58,8 @@ export function mountLanding(root, { go }) {
     e.preventDefault();
     const btn = e.submitter; jerr.textContent = '';
     const code = normCode(jc.value), name = root.querySelector('#jn').value.trim();
-    if ((code.length !== 6 && code !== DEMO_CODE) || !name) { jerr.textContent = 'צריך קוד בן 6 תווים ושם'; return; }
+    if (code === DEMO_CODE) { try { localStorage.setItem(DEMO_KEY, '1'); } catch (x) {} location.hash = '#/'; location.reload(); return; }
+    if (code.length !== 6 || !name) { jerr.textContent = 'צריך קוד בן 6 תווים ושם'; return; }
     btn.disabled = true;
     try {
       const u = await store.signInParticipant();
