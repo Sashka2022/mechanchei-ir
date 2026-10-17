@@ -5,7 +5,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function verifiedEmail() { return signedIn() && request.auth.token.email != null && request.auth.token.email_verified == true; }
-    function isSuper() { return verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il']; }
+    function isSuper() { return verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il', 'tovtuv@gmail.com']; }
     function isManager() { return isSuper() || (verifiedEmail() && exists(/databases/$(database)/documents/managers/$(request.auth.token.email.lower()))); }
     function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
     function isOwner(gid) { return isManager() && (isSuper() || grp(gid).ownerUid == request.auth.uid || request.auth.token.email.lower() in grp(gid).get('managerEmails', [])); }
