@@ -32,6 +32,7 @@ export const STAGES = [
 
 export const LAST_KEY = 'mhi-last-group';
 export const CITIES = ['חיפה', 'בת ים', 'מרום הגליל'];
+export const CITY_LOGOS = { 'חיפה': 'haifa', 'בת ים': 'bat-yam', 'מרום הגליל': 'merom-hagalil' };
 
 /* קוד קבוצה: 6 תווים בלי תווים מבלבלים (0/O, 1/I/L) */
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

@@ -244,10 +244,31 @@ iframe.ws{width:100%;height:calc(100vh - 200px);min-height:640px;border:0;border
 .item .btn:not(.pri),.card .btn:not(.pri):not(.lt){background:var(--frame)}
 .item .btn:not(.pri):hover,.card .btn:not(.pri):not(.lt):hover{background:var(--blue);color:var(--on)}
 .item .btn:disabled:hover{background:var(--frame);color:var(--blue)}
-.cities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.city{border:0;border-radius:var(--R);background:var(--page);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--blue);font-size:17px}
-.city:hover{outline:2px solid var(--blue)}
-.city .cdot{width:44px;height:44px;border-radius:50%;background:var(--frame);display:grid;place-items:center;font-weight:900;font-size:20px}
-.city.on{background:var(--blue);color:var(--on)}
-.city.on .cdot{background:var(--on);color:var(--blue)}
-@media (max-width:420px){.cities{grid-template-columns:1fr}.city{flex-direction:row;justify-content:flex-start;padding:10px 16px}}
+/* ===== עמוד הפתיחה: קבוצות הערים ===== */
+.land-top{padding:12px 22px}
+.adminbtn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;background:var(--page);color:var(--blue);padding:8px 16px 8px 14px;font-weight:600;font-size:15px}
+.adminbtn:hover{background:var(--blue);color:var(--on)}
+.pick{padding:34px 36px}
+.pick-t{font-size:clamp(34px,6vw,64px);margin:6px 0 10px}
+.cgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--R)}
+.ccard{border:0;background:var(--frame);border-radius:var(--R);padding:26px 22px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;color:var(--blue);cursor:pointer;text-align:center;transition:transform .15s, box-shadow .15s}
+.ccard:hover{transform:translateY(-4px);box-shadow:0 0 0 4px var(--blue)}
+.ccard:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
+.clogo{display:flex;align-items:center;justify-content:center;width:100%;height:210px;overflow:hidden}
+.clogo img{max-width:100%;max-height:210px;width:auto;height:auto}
+.cname{font-size:clamp(24px,2.6vw,32px);font-weight:900;line-height:1.1}
+.cgo{background:var(--blue);color:var(--on);border-radius:999px;padding:12px 30px;font-weight:700;font-size:18px}
+.ccard:hover .cgo{background:var(--purple)}
+.dlg.join,.dlg.admin{width:min(480px,94vw);max-width:none}
+.jhead{display:flex;gap:16px;align-items:center}
+.jlogo{flex:0 0 96px;width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:var(--page);border-radius:var(--R);padding:8px;overflow:hidden}
+.jlogo img{max-width:80px;max-height:80px;width:auto;height:auto}
+.jlogo.adm{color:var(--blue);width:64px;height:64px;flex-basis:64px;border-radius:50%}
+.jlogo.adm svg{width:34px;height:34px}
+@media (max-width:860px){.cgrid{grid-template-columns:1fr}.clogo{height:150px}.clogo img{max-height:150px}.ccard{padding:20px}.pick{padding:24px 20px}}
+
+/* ===== כותרת תחתונה עם לוגו חותם ===== */
+#foot{max-width:1180px;margin:0 auto;padding:0 var(--R) var(--R)}
+#foot .fr{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:18px 26px}
+#foot img{height:34px;width:auto}
+#foot span{font-weight:500;font-size:15px}
