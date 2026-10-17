@@ -248,8 +248,6 @@ iframe.ws{width:100%;height:calc(100vh - 200px);min-height:640px;border:0;border
 .land-top{padding:12px 22px}
 .adminbtn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;background:var(--page);color:var(--blue);padding:8px 16px 8px 14px;font-weight:600;font-size:15px}
 .adminbtn:hover{background:var(--blue);color:var(--on)}
-.pick{padding:34px 36px}
-.pick-t{font-size:clamp(34px,6vw,64px);margin:6px 0 10px}
 .cgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--R)}
 .ccard{border:0;background:var(--frame);border-radius:var(--R);padding:26px 22px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;color:var(--blue);cursor:pointer;text-align:center;transition:transform .15s, box-shadow .15s}
 .ccard:hover{transform:translateY(-4px);box-shadow:0 0 0 4px var(--blue)}
@@ -265,7 +263,7 @@ iframe.ws{width:100%;height:calc(100vh - 200px);min-height:640px;border:0;border
 .jlogo img{max-width:80px;max-height:80px;width:auto;height:auto}
 .jlogo.adm{color:var(--blue);width:64px;height:64px;flex-basis:64px;border-radius:50%}
 .jlogo.adm svg{width:34px;height:34px}
-@media (max-width:860px){.cgrid{grid-template-columns:1fr}.clogo{height:150px}.clogo img{max-height:150px}.ccard{padding:20px}.pick{padding:24px 20px}}
+@media (max-width:860px){.cgrid{grid-template-columns:1fr}.clogo{height:150px}.clogo img{max-height:150px}.ccard{padding:20px}}
 
 /* ===== כותרת תחתונה עם לוגו חותם ===== */
 #foot{max-width:1180px;margin:0 auto;padding:0 var(--R) var(--R)}

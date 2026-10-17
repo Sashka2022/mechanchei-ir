@@ -11,9 +11,6 @@ export function mountLanding(root, { go }) {
   <header class="fr top land-top"><img class="logo" src="../assets/hotam-logo-hebrew.png" alt="חותם · אחריות לחינוך בישראל">
     <div class="name grow">מחנכי עיר</div>
     <button class="adminbtn" type="button" id="adminOpen" aria-label="כניסת מנהלים" title="כניסת מנהלים">${ADMIN_ICON}<span>מנהלים</span></button></header>
-  <section class="fr blue pick"><div class="hint" style="font-weight:700;opacity:1">מחנכי עיר · מסע בעיר, יוזמה בידיים</div>
-    <h1 class="h-xl pick-t">לאיזו קבוצה אתם שייכים?</h1>
-    <p class="lede">בוחרים את העיר שלכם, ונכנסים עם הקוד שקיבלתם ממנהל.ת הקבוצה.</p></section>
   <section class="cgrid" aria-label="קבוצות הערים">${CITIES.map(c => `<button type="button" class="ccard" data-city="${esc(c)}">
       <span class="clogo"><img src="assets/cities/${CITY_LOGOS[c]}.webp" alt="" loading="eager"></span>
       <span class="cname">קבוצת ${esc(c)}</span><span class="cgo">כניסה לקבוצה</span></button>`).join('')}</section>
