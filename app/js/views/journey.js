@@ -28,6 +28,7 @@ export function mountJourney(root, ctx, { sid }) {
         if (isManager) return;
         const cur = !!((st.data.progress || []).find(p => p.id === d.id) || {}).attended;
         await db.doc(`${pbase}/${d.id}`).set({ attended: !cur }, { merge: true });
+        await db.doc(`${base}/members/${me.uid}`).set({ attended: { [d.id]: !cur } }, { merge: true });   // מראה לנוכחות שהמנהל.ת רואה
       }
     },
     after: (st, el) => {

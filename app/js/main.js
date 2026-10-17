@@ -10,6 +10,7 @@ import { mountJourney } from './views/journey.js';
 import { mountInitiative } from './views/initiative.js';
 import { mountPeople } from './views/people.js';
 import { mountSettings } from './views/settings.js';
+import { mountLibrary } from './views/library.js';
 
 const app = $('#app');
 let cleanup = null, bootDone = false, routeId = 0;
@@ -40,8 +41,8 @@ function setMain(html) { app.innerHTML = html; return $('#view'); }
 function shell(ctx, active) {
   const g = ctx.group, mgr = ctx.isManager;
   const tabs = mgr
-    ? [['', 'בית'], ['syllabus', 'סילבוס'], ['initiative', 'הובלת יוזמה'], ['people', 'משתתפים'], ['settings', 'הגדרות']]
-    : [['', 'בית'], ['journey', 'מסע התחנות'], ['initiative', 'הובלת יוזמה']];
+    ? [['', 'בית'], ['syllabus', 'סילבוס'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה'], ['people', 'משתתפים'], ['settings', 'הגדרות']]
+    : [['', 'בית'], ['journey', 'מסע התחנות'], ['library', 'ספריית השראה'], ['initiative', 'הובלת יוזמה']];
   return `${store.mode === 'local' ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
   <header class="fr top"><a href="#/" aria-label="לדף הבית"><img class="logo" src="../assets/hotam-logo-hebrew.png" alt="חותם"></a>
     <div class="name grow">מחנכי עיר · ${esc(g.name)}<small>${esc(g.city || '')}${mgr ? ' · מנהל.ת קבוצה' : ' · משתתף.ת'}</small></div>
@@ -95,7 +96,7 @@ async function route() {
       cleanup = mountInitiative(root, ctx, { tid: seg[3], step: q.get('step') || '' });
       return;
     }
-    const views = { '': mountHome, journey: mountJourney, s: mountJourney, syllabus: mountSyllabus, initiative: mountInitiative, people: mountPeople, settings: mountSettings };
+    const views = { '': mountHome, journey: mountJourney, s: mountJourney, syllabus: mountSyllabus, initiative: mountInitiative, people: mountPeople, settings: mountSettings, library: mountLibrary };
     const managerOnly = ['syllabus', 'people', 'settings'];
     if (!views[sec] || (managerOnly.includes(sec) && !isManager)) { go('/g/' + gid); return; }
     const root = setMain(shell(ctx, sec === 's' ? 'journey' : sec));

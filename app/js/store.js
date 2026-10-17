@@ -10,9 +10,9 @@ const loadScript = src => new Promise((res, rej) => {
 /* האפליקציה עובדת רק מול Firebase. בלי קונפיגורציה היא מציגה מסך "לא מחוברת לענן" ולא שומרת כלום.
    חריג למפתחים בלבד: במחשב המקומי, אחרי פתיחת הכתובת עם ?dev=1, נטען מנוע בדיקות מקומי מתיקיית dev/ (ללא נתוני אמת). */
 const onLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-try { if (onLocalhost && new URLSearchParams(location.search).get('dev') === '1') localStorage.setItem('mhi-dev', '1'); } catch (e) {}
+try { const dv = new URLSearchParams(location.search).get('dev'); if (onLocalhost && dv === '1') localStorage.setItem('mhi-dev', '1'); else if (onLocalhost && dv === '0') localStorage.removeItem('mhi-dev'); } catch (e) {}
 const devFlag = (() => { try { return onLocalhost && localStorage.getItem('mhi-dev') === '1'; } catch (e) { return false; } })();
-const mode = FIREBASE_CONFIG ? 'firebase' : devFlag ? 'local' : 'unconfigured';
+const mode = devFlag ? 'local' : FIREBASE_CONFIG ? 'firebase' : 'unconfigured';
 let db, auth, googleProvider;
 
 async function init() {

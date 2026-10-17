@@ -42,6 +42,12 @@ service cloud.firestore {
         allow write: if isOwner(gid);
       }
 
+      // ספריית השראה: המנהל.ת תמיד, משתתפים רק אחרי פרסום
+      match /library/{lid} {
+        allow read: if isOwner(gid) || (isMember(gid) && grp(gid).published == true);
+        allow write: if isOwner(gid);
+      }
+
       match /members/{uid} {
         allow read: if isOwner(gid) || isMember(gid);
         // הצטרפות: רק למשתמש.ת עצמו.ה, ורק עם קוד שמצביע על הקבוצה הזו

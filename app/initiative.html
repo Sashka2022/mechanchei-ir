@@ -387,6 +387,39 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .pcard{background:var(--frame);border-radius:var(--R);padding:16px;display:flex;flex-direction:column;gap:10px}
 .pcard .in{background:var(--page)}
 .brow .in{background:var(--frame)}
+.pb{display:flex;flex-direction:column;gap:12px}
+.pb-sec{display:grid;grid-template-columns:56px minmax(0,1fr);gap:16px;align-items:start}
+.pb-sec .n{width:56px;height:56px;border-radius:50%;background:var(--blue);color:var(--on);display:grid;place-items:center;font-weight:900;font-size:24px}
+.pb-sec h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pb-sec .in{margin-top:10px}
+.pb-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.pb-tot{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pb-tot .prog{flex:1;min-width:140px;margin:0}
+#pres{position:fixed;inset:0;z-index:200;background:var(--blue);color:var(--on);display:flex;flex-direction:column;padding:28px 40px 22px}
+#pres .ptop{display:flex;align-items:center;gap:14px}
+#pres .ptop img{height:34px;width:auto;filter:brightness(0) invert(1)}
+#pres .pbody{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;max-width:1180px;width:100%;margin:0 auto;min-height:0;overflow:auto}
+#pres .pk{font-weight:700;font-size:clamp(16px,2vw,22px)}
+#pres .pt{font-size:clamp(34px,6vw,84px);font-weight:900;line-height:1.02;letter-spacing:-.015em}
+#pres .pt.l{font-weight:400}
+#pres .ptx{font-size:clamp(24px,3.4vw,46px);line-height:1.35;font-weight:500;white-space:pre-line}
+#pres .pbar{display:flex;align-items:center;gap:12px}
+#pres .pbtn{border:0;border-radius:999px;background:var(--on);color:var(--blue);padding:10px 22px;font-weight:700;font-size:16px}
+#pres .pbtn:hover{background:var(--purple);color:var(--on)}
+#pres .pbtn[disabled]{opacity:.4;cursor:default}
+#pres .pdots{flex:1;display:flex;gap:8px;justify-content:center}
+#pres .pdots i{width:10px;height:10px;border-radius:50%;background:var(--on);opacity:.35}
+#pres .pdots i.on{opacity:1;width:26px;border-radius:99px}
+#pres .pcol{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+#pres .pcol>div{background:rgba(240,240,240,.14);border-radius:var(--R);padding:16px 18px;font-size:clamp(15px,1.7vw,21px);line-height:1.4}
+#pres .pcol b{display:block;margin-bottom:6px;font-size:.8em;opacity:.85}
+#pres .pnum{font-size:clamp(56px,11vw,160px);font-weight:900;line-height:.95}
+#pres .pchips{display:flex;gap:10px;flex-wrap:wrap}
+#pres .pchips span{background:var(--on);color:var(--blue);border-radius:999px;padding:6px 18px;font-weight:700;font-size:clamp(15px,1.8vw,22px)}
+#pres .pdef .p{display:inline;padding:3px 12px;border-radius:12px;font-weight:700;background:var(--on);color:var(--blue);box-decoration-break:clone}
+#pres .pdef .p.a{background:var(--purple);color:var(--on)}
+#pres .pdef .op{font-weight:800;margin:0 6px}
+@media (max-width:760px){.pb-sec{grid-template-columns:1fr}#pres{padding:18px 18px 14px}}
 @media (max-width:1100px){.toc{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:760px){.toc{grid-template-columns:1fr}.brow{grid-template-columns:1fr 34px}.brow>div:nth-child(3){grid-column:1}}
 body.emb .top .logo{display:none}
@@ -441,9 +474,10 @@ const STEPS = [
   { id: 'toc',      n: 7, label: 'תיאוריית שינוי',         icon: 'target',    group: 'תכנון היוזמה', ext: true, eb: 'שלב תכנון · נגזר מהרעיון שנבחר' },
   { id: 'budget',   n: 8, label: 'מחולל תב״ר',             icon: 'doc',       ext: true, eb: 'שלב תכנון · נגזר מהפעולות' },
   { id: 'partners', n: 9, label: 'גיוס שותפים',            icon: 'people',    ext: true, eb: 'שלב תכנון · נגזר מהשדה' },
+  { id: 'pitch',    n: 10, label: 'בונה פרזנטציה ופיצ׳',  icon: 'star',      group: 'אריזה והצגה', ext: true, eb: 'שלב אריזה · נגזר מכל התוצרים' },
   { id: 'board',    label: 'לוח למליאה',                  icon: 'board' }
 ];
-const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'toc', 'budget', 'funders', 'partners', 'sugg', 'votes', 'live'];
+const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'toc', 'budget', 'funders', 'partners', 'pitch', 'sugg', 'votes', 'live'];
 /* מי יכול לכתוב: ממלא.ת (עורך) כותב את הליבה. מסייעים (תורמים) כותבים רק הצעות, הצבעות והטיימר. */
 const OPEN = new Set(['sugg', 'votes', 'live']);
 const SECT = {
@@ -457,6 +491,7 @@ const SECT = {
   toc: [['note', 'הערה']],
   budget: [['note', 'הערה']],
   partners: [['note', 'הערה']],
+  pitch: [['pitch', 'ניסוח לפיצ׳'], ['note', 'הערה']],
   board: [['note', 'הערה']]
 };
 const SLABEL = {}; Object.values(SECT).forEach(a => a.forEach(([k, v]) => { SLABEL[k] = v; }));
@@ -570,6 +605,7 @@ function done(id) {
     case 'toc': return TOC_COLS.every(([k]) => tocItems(k).length > 0);
     case 'budget': return list('budget').some(r => (+V('budget', r.id, 'amount') || 0) > 0);
     case 'partners': return list('partners').length >= 2;
+    case 'pitch': return ['hook', 'problem', 'solution', 'ask'].every(f => !!(PV(f) || '').trim());
     case 'board': return ['phen', 'tree', 'path', 'def'].every(done);
   }
 }
@@ -678,7 +714,7 @@ function render() {
   const sy = scrollY;
   const oldNav = $('.side nav') ? $('.side nav').scrollLeft : null, oldStep = render._step; render._step = S.step;
   const st = STEPS[S.step];
-  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, board: boardHTML }[st.id]();
+  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, pitch: pitchHTML, board: boardHTML }[st.id]();
   const prev = STEPS[S.step - 1], next = STEPS[S.step + 1];
   const dn = STEPS.filter(s => done(s.id)).length;
   const gs = M('groupStep');
@@ -1020,6 +1056,90 @@ function partnersHTML() {
     <div class="chips w" style="margin-top:12px">${PART_PRESETS.filter(n => !have.includes(n)).map(n => `<button class="chp" data-act="addPartnerPreset" data-name="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div></section>`;
 }
 
+
+/* ---------- 10 · פיצ׳ ---------- */
+const PITCH = [
+  ['hook',     'הפתיחה',                    'משפט, סיפור קצר או מספר אחד שעוצר את החדר. לא מציגים את עצמנו, פותחים בבעיה.', 'לפני שנה בשכונה שלנו…', 15],
+  ['problem',  'הבעיה',                     'מה לא עובד, ומי סובל מזה. חוזרים להגדרת הבעיה, בלי להסביר את כל העץ.', 'בגלל ש… קורה ש… ולכן…', 30],
+  ['who',      'מי מושפע ומה אנחנו יודעים', 'מי הקהל, כמה אנשים, ואיזה נתון או עדות מחזקים שהבעיה אמיתית.', 'נתון, עדות או תצפית מהסיור', 20],
+  ['solution', 'היוזמה שלנו',               'מה בונים, במשפט או שניים שמי שלא היה איתנו יבין.', 'אנחנו מציעים…', 40],
+  ['how',      'איך זה עובד',               'הפעולות העיקריות והתוצרים. מה קורה בפיילוט, ומה נראה בסופו.', 'שלוש פעולות ותוצר אחד לכל פעולה', 30],
+  ['team',     'מי איתנו',                  'השותפים שכבר איתנו, ומי שעוד צריך לגייס. גורם עם ווטו עדיף להזכיר.', 'שותפים ותפקיד כל אחד', 20],
+  ['ask',      'מה אנחנו מבקשים',           'בקשה אחת וברורה: סכום, שותף, אישור או פתח. מי שמקשיב צריך לדעת מה לעשות עכשיו.', 'אנחנו מבקשים…', 25],
+  ['closing',  'משפט סיום',                 'מה נשאר בראש. אפשר לחזור למשפט הפתיחה.', 'משפט אחד שאפשר לזכור', 10]
+];
+const PV = f => V('pitch', 'main', f);
+const wordsOf = t => String(t || '').trim().split(/\s+/).filter(Boolean).length;
+const secOf = t => Math.round(wordsOf(t) / 2.1);      // כ-125 מילים בדקה
+const fmtSec = s => s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} דק׳` : `${s} שנ׳`;
+const PITCH_TARGET = 180;
+function pitchPrefill(f) {
+  const cause = M('def.cause'), phen = M('def.phen'), cons = M('def.cons');
+  if (f === 'problem') return cause && phen && cons ? `בגלל ש${cause}, קורה ש${phen}, ולכן ${cons}.` : '';
+  if (f === 'solution') { const st = starIdeas().map(x => V('ideas', x.id, 'text')).filter(Boolean); return st.length ? 'אנחנו מציעים ' + st.join(', וגם ') + '.' : ''; }
+  if (f === 'how') return tocItems('actions').map(i => '• ' + (V('toc', i.id, 'text') || '')).filter(x => x.length > 2).join('\n');
+  if (f === 'team') return list('partners').map(p => `• ${V('partners', p.id, 'name') || ''} (${PART_KIND[V('partners', p.id, 'kind') || 'support']}, ${PART_ST[V('partners', p.id, 'status') ?? 0]})`).join('\n');
+  if (f === 'ask') { const t = budgetTotal(); return t ? `לפיילוט אנחנו צריכים ${money(t)} ₪. עד היום אושרו ${money(fundedTotal())} ₪, ואנחנו מבקשים את ההשלמה.` : ''; }
+  return '';
+}
+const PRE_OK = new Set(['problem', 'solution', 'how', 'team', 'ask']);
+function pitchHTML() {
+  const s = stepById('pitch'), total = PITCH.reduce((a, r) => a + secOf(PV(r[0])), 0), over = total > PITCH_TARGET;
+  const filled = PITCH.filter(r => (PV(r[0]) || '').trim()).length;
+  return stepHead(s, 'אורזים את כל מה שבנינו לפיצ׳ של שלוש דקות ולפרזנטציה מוכנה להצגה') +
+  `${how(['מלאו כל חלק בכמה משפטים. כפתור ״מילוי מהנתונים״ מושך מההגדרה, מהרעיון, מהתיאוריה, מהתקציב ומהשותפים', 'עקבו אחרי זמן הדיבור: שלוש דקות הן כ-375 מילים', 'לחצו ״הצגה״ כדי לעבור על הפיצ׳ במסך מלא'],
+    ['הפיצ׳ בנוי משמונה חלקים. אפשר לדלג על חלק, ובהצגה הוא ייעלם.', 'הכותרת והמשפט המרכזי מופיעים בשקף הפתיחה.', 'בהצגה עוברים בין שקפים בחצים, ויוצאים עם Esc.'])}
+  <section class="fr"><div class="row"><h3 class="s grow">שם היוזמה</h3><button class="btn pri" data-act="presOpen">${ic('star', 'white', 20)} הצגה במסך מלא</button></div>
+    <div class="grid2" style="margin-top:12px"><div><label class="l" for="${fid('pitch', 'main', 'title')}">שם</label>${ta('pitch', 'main', 'title', 'שם קצר ומזכיר')}</div>
+      <div><label class="l" for="${fid('pitch', 'main', 'tagline')}">משפט מרכזי</label>${ta('pitch', 'main', 'tagline', 'מה היוזמה עושה, במשפט אחד')}</div></div>
+    <div class="pb-tot" style="margin-top:16px"><span class="pill ${over ? 'p' : ''}">${fmtSec(total)} מתוך ${fmtSec(PITCH_TARGET)}</span><div class="prog"><i style="width:${Math.min(100, Math.round(total / PITCH_TARGET * 100))}%"></i></div><span class="hint">${filled} מתוך ${PITCH.length} חלקים כתובים${over ? ' · הפיצ׳ ארוך מדי, כדאי לקצר' : ''}</span></div></section>
+  <div class="pb">${PITCH.map(([f, t, guide, ph, sec], i) => {
+    const txt = PV(f) || '', sc = secOf(txt), can = PRE_OK.has(f), pre = can ? pitchPrefill(f) : '';
+    return `<section class="fr pb-sec"><span class="n">${i + 1}</span><div><h3 class="s">${t}<span class="pill l">יעד ${sec} שנ׳</span>${sc ? `<span class="pill ${sc > sec * 1.6 ? 'p' : 'l'}">${fmtSec(sc)}</span>` : ''}</h3><p class="hint" style="margin-top:4px">${guide}</p>
+      ${ta('pitch', 'main', f, ph)}
+      ${can ? `<div class="pb-foot w"><button class="btn sm" data-act="pitchFill" data-f="${f}" ${pre ? '' : 'disabled'}>מילוי מהנתונים</button>${pre ? '' : '<span class="hint">עוד אין נתונים מהשלבים הקודמים</span>'}</div>` : ''}</div></section>`;
+  }).join('')}</div>`;
+}
+function pitchSlides() {
+  const sl = [], tx = f => (PV(f) || '').trim(), q = M('question');
+  sl.push({ k: 'מחנכי עיר', body: `<div class="pt">${esc(tx('title') || 'היוזמה שלנו')}</div>${tx('tagline') ? `<div class="ptx">${esc(tx('tagline'))}</div>` : ''}${q ? `<div class="pk">${esc(q)}</div>` : ''}` });
+  if (tx('hook')) sl.push({ k: 'הפתיחה', body: `<div class="pt l">${esc(tx('hook'))}</div>` });
+  if (tx('problem') || M('def.cause')) sl.push({ k: 'הבעיה', body: `${M('def.cause') && M('def.phen') && M('def.cons') ? `<div class="ptx pdef"><span class="op">בגלל ש</span><span class="p a">${esc(M('def.cause'))}</span> <span class="op">קורה ש</span><span class="p">${esc(M('def.phen'))}</span> <span class="op">ולכן</span><span class="p">${esc(M('def.cons'))}</span></div>` : ''}${tx('problem') ? `<div class="ptx" style="font-size:clamp(20px,2.6vw,34px)">${esc(tx('problem'))}</div>` : ''}` });
+  if (tx('who')) sl.push({ k: 'מי מושפע ומה אנחנו יודעים', body: `<div class="ptx">${esc(tx('who'))}</div>` });
+  if (tx('solution')) sl.push({ k: 'היוזמה שלנו', body: `<div class="pt l">${esc(tx('solution'))}</div>` });
+  const cols = TOC_COLS.filter(([k]) => tocItems(k).length);
+  if (tx('how') || cols.length) sl.push({ k: 'איך זה עובד', body: `${tx('how') ? `<div class="ptx" style="font-size:clamp(20px,2.8vw,38px)">${esc(tx('how'))}</div>` : ''}${cols.length ? `<div class="pcol">${cols.map(([k, t]) => `<div><b>${t}</b>${tocItems(k).slice(0, 4).map(i => esc(V('toc', i.id, 'text') || '')).join('<br>')}</div>`).join('')}</div>` : ''}` });
+  const ps = list('partners');
+  if (tx('team') || ps.length) sl.push({ k: 'מי איתנו', body: `${ps.length && !tx('team') ? `<div class="pchips">${ps.map(p => `<span>${esc(V('partners', p.id, 'name') || '')}</span>`).join('')}</div>` : ''}${tx('team') ? `<div class="ptx" style="font-size:clamp(18px,2.4vw,32px)">${esc(tx('team'))}</div>` : ''}` });
+  if (tx('ask') || budgetTotal()) sl.push({ k: 'מה אנחנו מבקשים', body: `${budgetTotal() ? `<div class="pnum">${money(budgetTotal())} ₪</div><div class="pk">מתוכם מכוסה ${money(fundedTotal())} ₪</div>` : ''}${tx('ask') ? `<div class="ptx">${esc(tx('ask'))}</div>` : ''}` });
+  if (tx('closing')) sl.push({ k: '', body: `<div class="pt">${esc(tx('closing'))}</div>` });
+  return sl;
+}
+function presRender() {
+  let el = $('#pres'); const sl = pitchSlides();
+  if (S.pres == null) { if (el) el.remove(); document.body.style.overflow = ''; return; }
+  S.pres = Math.max(0, Math.min(sl.length - 1, S.pres));
+  if (!el) { el = document.createElement('div'); el.id = 'pres'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'הצגת הפיצ׳'); document.body.appendChild(el); document.body.style.overflow = 'hidden'; }
+  const cur = sl[S.pres];
+  el.innerHTML = `<div class="ptop"><img src="${A.logo_white || A.logo}" alt="חותם"><span class="pk grow">${esc(cur.k)}</span><button class="pbtn" data-act="presClose">יציאה · Esc</button></div>
+    <div class="pbody">${cur.body}</div>
+    <div class="pbar"><button class="pbtn" data-act="presGo" data-d="1" ${S.pres >= sl.length - 1 ? 'disabled' : ''}>הבא ←</button><div class="pdots">${sl.map((_, i) => `<i class="${i === S.pres ? 'on' : ''}"></i>`).join('')}</div><button class="pbtn" data-act="presGo" data-d="-1" ${S.pres <= 0 ? 'disabled' : ''}>→ הקודם</button></div>`;
+  const b = $('.pbtn[data-act="presClose"]', el); if (b) b.focus({ preventScroll: true });
+}
+function pitchBoardHTML() {
+  const rows = PITCH.filter(r => (PV(r[0]) || '').trim());
+  if (!rows.length && !(PV('title') || '').trim()) return '';
+  return `<h3 class="s">הפיצ׳${PV('title') ? ' · ' + esc(PV('title')) : ''}</h3>${PV('tagline') ? `<p class="lede">${esc(PV('tagline'))}</p>` : ''}${rows.length ? `<div class="stack" style="gap:12px">${rows.map(r => `<div class="card"><b>${r[1]}</b><p style="margin-top:6px;white-space:pre-line">${esc(PV(r[0]))}</p></div>`).join('')}</div>` : ''}`;
+}
+function pitchText(L) {
+  L.push('', '10. פיצ׳'); if (PV('title')) L.push('שם היוזמה: ' + PV('title')); if (PV('tagline')) L.push('משפט מרכזי: ' + PV('tagline'));
+  let n = 0; PITCH.forEach(r => { const t = (PV(r[0]) || '').trim(); if (t) { n++; L.push(r[1] + ':'); t.split('\n').forEach(x => L.push('  ' + x)); } }); if (!n) L.push('  —');
+}
+function pitchReportHTML(e) {
+  const rows = PITCH.filter(r => (PV(r[0]) || '').trim());
+  return `<div class="blk flow"><h2>10 · פיצ׳${PV('title') ? ' · ' + e(PV('title')) : ''}</h2>${PV('tagline') ? `<p><b>${e(PV('tagline'))}</b></p>` : ''}${rows.length ? rows.map(r => `<h3>${r[1]}</h3><p>${e(PV(r[0])).replace(/\n/g, '<br>')}</p>`).join('') : '<p class="mut">לא נרשם</p>'}</div>`;
+}
+
 /* תקצירים ללוח למליאה, לטקסט ולמסמך המודפס */
 function planBoardHTML() {
   const rows = list('budget'), ps = list('partners');
@@ -1056,7 +1176,7 @@ function boardHTML() {
   <section class="fr board"><h3 class="s" style="margin-top:0">הנחות יסוד מרכזיות</h3>${as.length ? `<ol style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${as.map(a => `<li>${esc(V('assumptions', a.id, 'text') || '')} <span class="pill l">${TYPES[V('assumptions', a.id, 'type') || 'hyp']}</span></li>`).join('')}</ol>` : '<span class="hint">עוד לא נרשמו</span>'}
     ${M('hmw') ? `<h3 class="s">שאלת ״איך נוכל…״</h3><p class="lede">${esc(M('hmw'))}</p>` : ''}
     <h3 class="s">רעיונות שסומנו לפיילוט</h3>${stars.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${stars.map(x => `<li>${esc(V('ideas', x.id, 'text') || '')} <span class="hint">· ${votesOf(x.id)} קולות</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא סומנו רעיונות לפיילוט</span>'}</section>
-  <section class="fr board">${planBoardHTML()}</section>`;
+  <section class="fr board">${planBoardHTML()}</section>${pitchBoardHTML() ? `<section class="fr board">${pitchBoardHTML()}</section>` : ''}`;
 }
 function boardText() {
   const L = [], RATE = { s: 'חזק', m: 'בינוני', w: 'חלש' };
@@ -1082,6 +1202,7 @@ function boardText() {
   L.push('', '6. רעיונות לפתרון'); if (M('hmw')) L.push('איך נוכל…: ' + M('hmw'));
   list('ideas').forEach((x, i) => L.push(`  ${V('ideas', x.id, 'star') ? '★' : '•'} ${V('ideas', x.id, 'text') || ''} (${votesOf(x.id)} קולות)`));
   planText(L);
+  pitchText(L);
   const notes = STEPS.filter(st => V('notes', st.id, 'text')); if (notes.length) { L.push('', 'הערות המתעד.ת'); notes.forEach(st => L.push(`  ${st.label}: ${V('notes', st.id, 'text')}`)); }
   L.push('', 'חותם · אחריות לחינוך בישראל');
   return L.join('\n');
@@ -1165,6 +1286,7 @@ ${opts.word ? '' : `<div class="bar"><span>מסמך מוכן להדפסה</span>
 <div class="blk"><h2>5 · הגדרת הבעיה</h2><div class="def"><b>בגלל ש</b> ${e(M('def.cause') || '…')} <b>+ קורה ש</b> ${e(M('def.phen') || '…')} <b>+ לכן ההשלכה היא</b> ${e(M('def.cons') || '…')}</div><h3>הנחות יסוד מרכזיות</h3>${as.length ? `<ol>${as.map(a => `<li>${e(V('assumptions', a.id, 'text') || '')} <span class="mut">(${TYPES[V('assumptions', a.id, 'type') || 'hyp']})</span></li>`).join('')}</ol>` : '<p class="mut">לא נרשם</p>'}</div>
 <div class="blk flow"><h2>6 · רעיונות לפתרון</h2>${M('hmw') ? `<p><b>איך נוכל…</b> ${e(M('hmw'))}</p>` : ''}${ideas.length ? `<table class="g"><tr><th>רעיון</th><th>מטפל ב</th><th>הנחה</th><th>מאמץ</th><th>השפעה</th><th>קולות</th><th>פיילוט</th></tr>${ideasS.map(x => { const a = D.assumptions[V('ideas', x.id, 'assum')]; return `<tr><td>${e(V('ideas', x.id, 'text') || '')}</td><td>${TG[x.target] || ''}</td><td>${a ? e(V('assumptions', V('ideas', x.id, 'assum'), 'text') || '') : '—'}</td><td>${EFF[V('ideas', x.id, 'effort') ?? 1]}</td><td>${IMP[V('ideas', x.id, 'impact') ?? 1]}</td><td>${votesOf(x.id)}</td><td>${V('ideas', x.id, 'star') ? RS : ''}</td></tr>`; }).join('')}</table>` : '<p class="mut">לא נרשמו רעיונות</p>'}</div>
 ${planReportHTML(e)}
+${pitchReportHTML(e)}
 ${notes.length ? `<div class="blk flow"><h2>הערות המתעד.ת</h2>${notes.map(st => `<p><b>${e(st.label)}:</b> ${e(V('notes', st.id, 'text'))}</p>`).join('')}</div>` : ''}
 <div class="ft">הופק באפליקציית ״מחנכי עיר מפצחים כאב בטן״ · חותם · אחריות לחינוך בישראל · ${e(dt)}</div></div></body></html>`;
 }
@@ -1270,6 +1392,10 @@ const ACT = {
   saveHtml() { saveFile(fileStem() + '.html', reportHTML(), 'text/html'); },
   saveDoc() { saveFile(fileStem() + '.doc', reportHTML({ word: true }), 'application/msword'); },
   saveText() { saveFile(fileStem() + '.txt', boardText(), 'text/plain'); },
+  pitchFill(e) { const t = pitchPrefill(e.f); if (!t) { toast('אין עדיין נתונים למילוי'); return; } const cur = (PV(e.f) || '').trim(); if (cur && !confirm('להחליף את הטקסט הקיים בטקסט שנוצר מהנתונים?')) return; patch('pitch', 'main', { [e.f]: t }, 0); toast('מולא מהנתונים'); },
+  presOpen() { S.pres = 0; presRender(); },
+  presClose() { S.pres = null; presRender(); },
+  presGo(e) { S.pres += +e.d; presRender(); },
   openExport() { S.step = STEPS.length - 1; lsSet(WS_KEY, S.step); render(); scrollTo(0, 0); },
   tToggle: () => timerAct('tToggle'), tReset: () => timerAct('tReset'), tAdd: e => timerAct('tAdd', +e.n)
 };
@@ -1288,6 +1414,12 @@ document.addEventListener('click', ev => {
   const f = ACT[el.dataset.act]; if (f) f(el.dataset, el);
 });
 document.addEventListener('keydown', ev => {
+  if (S.pres != null) {
+    if (ev.key === 'Escape') { ev.preventDefault(); ACT.presClose(); }
+    else if (ev.key === 'ArrowLeft' || ev.key === 'PageDown') { ev.preventDefault(); ACT.presGo({ d: 1 }); }
+    else if (ev.key === 'ArrowRight' || ev.key === 'PageUp') { ev.preventDefault(); ACT.presGo({ d: -1 }); }
+    return;
+  }
   const t = ev.target;
   if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter' && t.matches && t.matches('[data-addin="sugg"]')) { ev.preventDefault(); ACT.addSugg(); return; }
   if (ev.key === 'Enter' && t.tagName === 'INPUT' && t.matches && t.matches('[data-addin]')) { ev.preventDefault(); const b = $('button[data-act]', t.closest('.addrow')); if (b) b.click(); }

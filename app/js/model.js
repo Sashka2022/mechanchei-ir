@@ -13,6 +13,7 @@ export const WS_STEPS = [
   { id: 'toc',      label: 'תיאוריית שינוי',          n: 7 },
   { id: 'budget',   label: 'מחולל תב״ר',              n: 8 },
   { id: 'partners', label: 'גיוס שותפים',             n: 9 },
+  { id: 'pitch',    label: 'בונה פרזנטציה ופיצ׳',      n: 10 },
   { id: 'board',    label: 'לוח למליאה' }
 ];
 export const wsLabel = id => (WS_STEPS.find(s => s.id === id) || {}).label || '';
@@ -27,9 +28,10 @@ export const STAGES = [
   { id: 's3', n: 3, title: 'תכנון היוזמה', desc: 'בונים תיאוריית שינוי, תקציב ושותפים לרעיון שנבחר.',
     steps: ['toc', 'budget', 'partners'], gate: 'plan', out: 'תוכנית יוזמה: תיאוריית שינוי, תקציב ושותפים' },
   { id: 's4', n: 4, title: 'אריזה והצגה', desc: 'אורזים את היוזמה להצגה בסיום התכנית.',
-    soon: ['בונה פרזנטציה ופיצ׳'], out: 'פיצ׳ ליוזמה' }
+    steps: ['pitch'], gate: 'pitch', out: 'פיצ׳ של שלוש דקות ופרזנטציה מוכנה להצגה' }
 ];
 
+export const LIB_CATS = ['יזמות', 'מנהיגות', 'הוגנות', 'סוגיות חינוכיות', 'נתוני העיר'];
 export const LAST_KEY = 'mhi-last-group';
 export const CITIES = ['חיפה', 'בת ים', 'מרום הגליל'];
 export const CITY_LOGOS = { 'חיפה': 'haifa', 'בת ים': 'bat-yam', 'מרום הגליל': 'merom-hagalil' };
