@@ -13,8 +13,8 @@ export function mountPeople(root, ctx) {
       const tname = id => (teams.find(t => t.id === id) || {}).name;
       const solo = members.filter(m => !tname(m.teamId)).length;
       return `<section class="fr"><div class="sh"><div class="grow"><div class="eyebrow">${esc(ctx.group.name)}</div><h2 class="t">משתתפים</h2>
-          <p>${members.length === 1 ? 'משתתף.ת אחד.ת נכנס.ה' : members.length + ' נכנסו'} עם קוד הקבוצה${solo ? `, ${solo} עוד בלי צוות` : ''}.</p></div></div></section>
-        <section class="fr"><div class="list">${members.length ? members.map(m => `<div class="item"><div class="grow" style="padding:8px 10px"><b>${esc(m.name)}</b><div class="hint">${tname(m.teamId) ? 'צוות · ' + esc(tname(m.teamId)) : 'עוד בלי צוות'}${stations.length ? ' · נכח.ה ב-' + att(m) + ' מתוך ' + stations.length + ' תחנות' : ''}</div></div><button class="rm" data-act="rmMember" data-id="${m.id}" aria-label="הסרה מהקבוצה"></button></div>`).join('') : '<div class="empty"><b>עוד לא נכנס אף אחד</b>שתפו את קוד הקבוצה מדף הבית.</div>'}</div></section>
+          <p>${members.length === 1 ? 'משתתף.ת אחד.ת נכנס.ה' : members.length + ' נכנסו'} עם המייל שלהם${solo ? `, ${solo} עוד בלי צוות` : ''}.</p></div></div></section>
+        <section class="fr"><div class="list">${members.length ? members.map(m => `<div class="item"><div class="grow" style="padding:8px 10px"><b>${esc(m.name)}</b>${m.email ? `<div class="hint" dir="ltr" style="text-align:end">${esc(m.email)}</div>` : ''}<div class="hint">${tname(m.teamId) ? 'צוות · ' + esc(tname(m.teamId)) : 'עוד בלי צוות'}${stations.length ? ' · נכח.ה ב-' + att(m) + ' מתוך ' + stations.length + ' תחנות' : ''}</div></div>${m.email ? `<button class="btn sm" data-act="resetPw" data-id="${m.id}" title="שולח למשתתף.ת מייל שבו קובעים סיסמה חדשה">איפוס סיסמה</button>` : ''}<button class="rm" data-act="rmMember" data-id="${m.id}" aria-label="הסרה מהקבוצה"></button></div>`).join('') : '<div class="empty"><b>עוד לא נכנס אף אחד</b>משתתפים נכנסים מדף הפתיחה, עם בחירת העיר והמייל שלהם.</div>'}</div></section>
         ${stations.length && members.length ? `<section class="fr"><div class="row"><h3 class="s grow">נוכחות בתחנות</h3><button class="btn sm" data-act="csv">ייצוא לאקסל (CSV)</button></div><div class="tablewrap"><table class="g"><thead><tr><th>תחנה</th><th>מועד</th><th>נכחו</th><th></th></tr></thead><tbody>${stations.map(s => { const n = members.filter(m => (m.attended || {})[s.id]).length; return `<tr><td><b>${esc(s.title)}</b></td><td>${esc(fmtDate(s.date, s.time))}</td><td>${n} מתוך ${members.length}</td><td><div class="prog" style="margin:0;min-width:90px"><i style="width:${Math.round(n / members.length * 100)}%"></i></div></td></tr>`; }).join('')}</tbody></table></div><p class="hint" style="margin-top:10px">הנוכחות מסומנת על ידי המשתתפים בעצמם. היומן האישי והתשובות להכנה נשארים פרטיים.</p></section>` : ''}
         <section class="fr"><h3 class="s">התקדמות הצוותים</h3>${teams.length ? `<div class="tablewrap"><table class="g"><thead><tr><th>צוות</th><th>חקירה</th><th>רעיונות</th><th>תוכנית</th><th>פיצ׳</th><th>הגדרת הבעיה</th><th></th></tr></thead><tbody>${teams.map(t => {
           const p = t.progress || {}, n = STAGES[0].steps.filter(x => p[x]).length;
@@ -24,14 +24,21 @@ export function mountPeople(root, ctx) {
       csv(d, el, st) {
         const stations = (st.data.stations || []).sort(byOrder), teams = st.data.teams || [], members = (st.data.members || []).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
         const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-        const head = ['שם', 'צוות', 'נכח.ה בתחנות', ...stations.map(s => s.title)];
-        const rows = members.map(m => { const t = teams.find(x => x.id === m.teamId); const at = stations.map(s => (m.attended || {})[s.id] ? 'כן' : ''); return [m.name, t ? t.name : '', at.filter(Boolean).length, ...at]; });
+        const head = ['שם', 'מייל', 'צוות', 'נכח.ה בתחנות', ...stations.map(s => s.title)];
+        const rows = members.map(m => { const t = teams.find(x => x.id === m.teamId); const at = stations.map(s => (m.attended || {})[s.id] ? 'כן' : ''); return [m.name, m.email || '', t ? t.name : '', at.filter(Boolean).length, ...at]; });
         const text = '﻿' + [head, ...rows].map(r => r.map(q).join(',')).join('\r\n');
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' })); a.download = 'משתתפים-ונוכחות.csv';
         document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('הקובץ נשמר');
       },
+      async resetPw(d, el, st) {
+        const m = (st.data.members || []).find(x => x.id === d.id); if (!m || !m.email) return;
+        if (!(await confirmDialog(`לשלוח ל-${m.name} מייל לאיפוס סיסמה? הוא.היא יקבעו בו סיסמה חדשה ואז יוכלו להיכנס.`, 'שליחה'))) return;
+        el.disabled = true;
+        try { await store.sendReset(m.email); toast('נשלח מייל לאיפוס הסיסמה אל ' + m.email); } catch (x) { toast('השליחה נכשלה'); }
+        el.disabled = false;
+      },
       async rmMember(d, el, st) {
-        if (!(await confirmDialog('להסיר את המשתתף.ת מהקבוצה? הוא.היא יוכלו להיכנס שוב עם הקוד.', 'הסרה'))) return;
+        if (!(await confirmDialog('להסיר את המשתתף.ת מהקבוצה? הוא.היא יוכלו להיכנס שוב עם המייל.', 'הסרה'))) return;
         const m = (st.data.members || []).find(x => x.id === d.id);
         try { if (m && m.teamId) await db.doc(`${base}/teams/${m.teamId}/roster/${d.id}`).delete(); await db.doc(`${base}/members/${d.id}`).delete(); toast('הוסר.ה'); } catch (x) { toast('ההסרה נכשלה'); }
       }

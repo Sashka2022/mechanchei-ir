@@ -89,7 +89,12 @@ export function createLocalAuth() {
   const users = () => { try { return JSON.parse(lsGet(USERS_KEY) || '{}'); } catch (e) { return {}; } };
   const saveUsers = u => lsSet(USERS_KEY, JSON.stringify(u));
   const session = () => { try { return JSON.parse(lsGet(SESSION_KEY) || 'null'); } catch (e) { return null; } };
-  const toUser = s => s ? { uid: s.uid, email: s.email || null, displayName: s.name || null, isAnonymous: !!s.anon, emailVerified: !!s.email } : null;
+  const emit = s => { lsSet(SESSION_KEY, JSON.stringify(s)); auth.currentUser = toUser(s); listeners.forEach(f => f(auth.currentUser)); return auth.currentUser; };
+  const bad = code => Object.assign(new Error(code), { code });
+  /* משתתפים עם מייל וסיסמה (כמו Firebase): pw ריק = כל סיסמה מתקבלת (מנהלים, וחשבונות אחרי איפוס) */
+  const toUser = s => s ? { uid: s.uid, email: s.email || null, displayName: s.name || null, isAnonymous: !!s.anon, emailVerified: !!s.email && !s.part, participant: !!s.part,
+    async updateProfile(p) { const u = users(), e = s.email; if (u[e] && p.displayName) { u[e].name = p.displayName; saveUsers(u); emit({ ...s, name: p.displayName }); } },
+    async updatePassword(pw) { const u = users(); if (u[s.email]) { u[s.email].pw = pw; saveUsers(u); } } } : null;
   const auth = {
     currentUser: toUser(session()),
     onAuthStateChanged(fn) { listeners.add(fn); setTimeout(() => fn(auth.currentUser), 0); return () => listeners.delete(fn); },
@@ -102,6 +107,19 @@ export function createLocalAuth() {
       const s = { uid: u[e].uid, email: e, name: u[e].name };
       lsSet(SESSION_KEY, JSON.stringify(s)); auth.currentUser = toUser(s); listeners.forEach(f => f(auth.currentUser)); return auth.currentUser;
     },
+    async signInWithEmailAndPassword(email, pw) {
+      const e = String(email).toLowerCase(), u = users()[e];
+      if (!u) throw bad('auth/user-not-found');
+      if (u.pw && u.pw !== pw) throw bad('auth/wrong-password');
+      return { user: emit({ uid: u.uid, email: e, name: u.name, part: !!u.part }) };
+    },
+    async createUserWithEmailAndPassword(email, pw) {
+      const e = String(email).toLowerCase(), u = users();
+      if (u[e]) throw bad('auth/email-already-in-use');
+      u[e] = { uid: 'p' + rid(), email: e, name: e.split('@')[0], pw, part: true }; saveUsers(u);
+      return { user: emit({ uid: u[e].uid, email: e, name: u[e].name, part: true }) };
+    },
+    async sendPasswordResetEmail(email) { const u = users(), e = String(email).toLowerCase(); if (u[e]) { u[e].pw = null; saveUsers(u); } },
     async signInAnonymously() {
       let s = session();
       if (!s || !s.anon) { s = { uid: 'a' + rid(), anon: true }; lsSet(SESSION_KEY, JSON.stringify(s)); }

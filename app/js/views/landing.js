@@ -1,7 +1,7 @@
-/* דף כניסה: שלוש קבוצות הערים בולטות במרכז (כניסה בקוד קבוצה ושם), וכניסת מנהלים באייקון בפינה. */
+/* דף כניסה: שלוש קבוצות הערים בולטות במרכז (כניסה עם מייל, בלי קוד ובלי סיסמה חובה), וכניסת מנהלים באייקון בפינה. */
 import { store } from '../store.js';
 import { esc } from '../ui.js';
-import { normCode, LAST_KEY, CITIES, CITY_LOGOS, DEMO_CODE } from '../model.js';
+import { LAST_KEY, CITIES, CITY_LOGOS, DEMO_CODE } from '../model.js';
 import { DEMO_KEY } from '../demo.js';
 
 const ADMIN_ICON = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 9.5C8 19.2 5 15.5 5 11V6l7-3z"/><circle cx="12" cy="10" r="2.4"/><path d="M8 16c.8-2 2.4-3 4-3s3.2 1 4 3"/></svg>`;
@@ -23,8 +23,10 @@ export function mountLanding(root, { go }) {
   <dialog class="dlg join" id="joinDlg" aria-labelledby="joinTitle">
     <form id="joinForm" class="stack" style="gap:14px">
       <div class="jhead"><span class="jlogo"><img id="jimg" alt=""></span><div><div class="hint" style="font-weight:700">כניסה לקבוצה</div><h2 id="joinTitle" class="s" style="font-size:28px;font-weight:900;line-height:1.1"></h2></div></div>
-      <div><label class="l" for="jc">קוד הקבוצה</label><input class="in code" id="jc" name="code" autocomplete="off" maxlength="9" placeholder="ABC-123" required></div>
-      <div><label class="l" for="jn">איך נקרא לכם?</label><input class="in" id="jn" name="name" autocomplete="name" maxlength="60" placeholder="שם פרטי ושם משפחה"></div>
+      <div><label class="l" for="je">המייל שלכם</label><input class="in" id="je" name="email" type="text" inputmode="email" dir="ltr" autocomplete="email" maxlength="120" placeholder="name@example.com" required></div>
+      <div><label class="l" for="jn">איך נקרא לכם? <span class="hint">(בכניסה הראשונה)</span></label><input class="in" id="jn" name="name" autocomplete="name" maxlength="60" placeholder="שם פרטי ושם משפחה"></div>
+      <div id="jpwBox" hidden><label class="l" for="jp">סיסמה</label><input class="in" id="jp" name="password" type="password" dir="ltr" autocomplete="current-password" maxlength="100">
+        <button class="btn sm" type="button" id="jforgot" style="margin-top:8px">שכחתי סיסמה</button></div>
       <div class="hint" id="jerr" role="alert" style="min-height:22px"></div>
       <div class="row"><button class="btn pri" type="submit">כניסה</button><button class="btn" type="button" data-close>ביטול</button></div>
     </form></dialog>
@@ -45,32 +47,46 @@ export function mountLanding(root, { go }) {
   root.querySelector('#adminOpen').addEventListener('click', () => { root.querySelector('#merr').textContent = ''; adminDlg.showModal(); });
 
   let city = '';
-  const jc = root.querySelector('#jc'), jerr = root.querySelector('#jerr');
+  const je = root.querySelector('#je'), jn = root.querySelector('#jn'), jp = root.querySelector('#jp'), jpwBox = root.querySelector('#jpwBox'), jerr = root.querySelector('#jerr');
   root.querySelectorAll('.ccard').forEach(b => b.addEventListener('click', () => {
     city = b.dataset.city;
     root.querySelector('#joinTitle').textContent = 'קבוצת ' + city;
     root.querySelector('#jimg').src = `assets/cities/${CITY_LOGOS[city]}.webp`;
-    jerr.textContent = ''; joinDlg.showModal(); jc.focus();
+    jerr.textContent = ''; jpwBox.hidden = true; jp.value = ''; joinDlg.showModal(); je.focus();
   }));
-  jc.addEventListener('input', () => { const c = normCode(jc.value).slice(0, 6); jc.value = c && DEMO_CODE.startsWith(c) ? c : c.length > 3 ? c.slice(0, 3) + '-' + c.slice(3) : c; });
+  root.querySelector('#jforgot').addEventListener('click', async () => {
+    const em = je.value.trim();
+    if (!em.includes('@')) { jerr.textContent = 'כתבו למעלה את המייל, ואז לחצו שוב'; return; }
+    try { await store.sendReset(em); jerr.textContent = 'שלחנו מייל לאיפוס הסיסמה. אם הוא לא מגיע, בדקו בספאם או פנו למנהל.ת הקבוצה'; }
+    catch (x) { jerr.textContent = 'לא הצלחנו לשלוח מייל. נסו שוב'; }
+  });
 
   root.querySelector('#joinForm').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = e.submitter; jerr.textContent = '';
-    const code = normCode(jc.value), name = root.querySelector('#jn').value.trim();
-    if (code === DEMO_CODE) { try { localStorage.setItem(DEMO_KEY, '1'); } catch (x) {} location.hash = '#/'; location.reload(); return; }
-    if (code.length !== 6 || !name) { jerr.textContent = 'צריך קוד בן 6 תווים ושם'; return; }
+    const email = je.value.trim().toLowerCase(), name = jn.value.trim(), password = jp.value;
+    if (email === DEMO_CODE) { try { localStorage.setItem(DEMO_KEY, '1'); } catch (x) {} location.hash = '#/'; location.reload(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { jerr.textContent = 'צריך כתובת מייל תקינה'; return; }
     btn.disabled = true;
     try {
-      const u = await store.signInParticipant();
-      const c = await store.db.doc('joinCodes/' + code).get();
-      if (!c.exists) { jerr.textContent = 'הקוד לא נמצא. בדקו שוב מול מנהל.ת הקבוצה'; btn.disabled = false; return; }
-      if (c.data().city && c.data().city !== city) { jerr.textContent = 'הקוד הזה שייך לקבוצה של עיר אחרת'; btn.disabled = false; return; }
-      const gid = c.data().gid, ref = store.db.doc(`groups/${gid}/members/${u.uid}`);
-      await ref.set({ name, code, joinedAt: Date.now() }, { merge: true });
+      const { user } = await store.signInParticipant(email, name, password);
+      const cg = await store.db.doc('cityGroups/' + city).get();
+      if (!cg.exists) { await store.signOut(); jerr.textContent = 'קבוצת העיר עוד לא נפתחה. אפשר לפנות למנהל.ת התוכנית'; btn.disabled = false; return; }
+      const gid = cg.data().gid, ref = store.db.doc(`groups/${gid}/members/${user.uid}`);
+      if (!(await ref.get()).exists) await ref.set({ name: name || user.displayName || email.split('@')[0], email, city, joinedAt: Date.now() });
       try { localStorage.setItem(LAST_KEY, gid); } catch (x) {}
       go('/g/' + gid);
-    } catch (x) { jerr.textContent = 'לא הצלחנו להיכנס. נסו שוב'; btn.disabled = false; }
+    } catch (x) {
+      const c = x && x.code;
+      if (c === 'need-name') { jpwBox.hidden = false; jerr.textContent = 'זו כניסה ראשונה? כתבו גם את השם שלכם. כבר הגדרתם סיסמה? כתבו אותה בשדה הסיסמה.'; jn.focus(); }
+      else if (c === 'need-password') { jpwBox.hidden = false; jerr.textContent = 'למייל הזה כבר הוגדרה סיסמה. כתבו אותה כדי להיכנס'; jp.focus(); }
+      else if (c === 'wrong-password') { jpwBox.hidden = false; jerr.textContent = 'הסיסמה לא נכונה. אפשר לבקש איפוס במייל'; jp.focus(); }
+      else if (c === 'auth/invalid-email') jerr.textContent = 'כתובת המייל לא תקינה';
+      else if (c === 'auth/too-many-requests') jerr.textContent = 'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות';
+      else if (c === 'auth/operation-not-allowed') jerr.textContent = 'הכניסה עם מייל עוד לא הופעלה בפרויקט. פנו למנהל.ת האפליקציה';
+      else jerr.textContent = 'לא הצלחנו להיכנס. נסו שוב';
+      btn.disabled = false;
+    }
   });
 
   root.querySelector('#mgrForm').addEventListener('submit', async e => {

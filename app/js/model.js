@@ -33,20 +33,11 @@ export const STAGES = [
 ];
 
 export const LIB_CATS = ['יזמות', 'מנהיגות', 'הוגנות', 'סוגיות חינוכיות', 'נתוני העיר'];
-/* קוד קבוצת ההדגמה: 4 ספרות, נכנסים איתו לקבוצת בדיקה פתוחה (נוצרת על ידי מנהל.ת על בדף ״הקבוצות שלי״). */
+/* ״1111״ בשדה המייל בדף הכניסה פותח את מצב ההדגמה. */
 export const DEMO_CODE = '1111';
 export const LAST_KEY = 'mhi-last-group';
 export const CITIES = ['חיפה', 'בת ים', 'מרום הגליל'];
 export const CITY_LOGOS = { 'חיפה': 'haifa', 'בת ים': 'bat-yam', 'מרום הגליל': 'merom-hagalil' };
-
-/* קוד קבוצה: 6 תווים בלי תווים מבלבלים (0/O, 1/I/L) */
-const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-export function newCode() {
-  const a = new Uint32Array(6); crypto.getRandomValues(a);
-  return [...a].map(n => CODE_CHARS[n % CODE_CHARS.length]).join('');
-}
-export const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export const showCode = c => (c || '').replace(/^(.{3})(.{3})$/, '$1-$2');
 
 export const fmtDate = (d, t) => {
   if (!d) return 'מועד יעודכן';

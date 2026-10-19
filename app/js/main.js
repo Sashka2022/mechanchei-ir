@@ -11,6 +11,7 @@ import { mountInitiative } from './views/initiative.js';
 import { mountPeople } from './views/people.js';
 import { mountSettings } from './views/settings.js';
 import { mountLibrary } from './views/library.js';
+import { openPasswordDialog } from './views/account.js';
 import { DEMO_KEY, DEMO_USER, seedDemo } from './demo.js';
 
 const app = $('#app');
@@ -23,7 +24,7 @@ export const go = path => { if (location.hash === '#' + path) route(); else loca
 /* האם החשבון המחובר מורשה לנהל קבוצות */
 async function managerStatus(user) {
   if (!user || user.isAnonymous) return { ok: false };
-  if (store.mode === 'local') return { ok: true, sup: true };
+  if (store.mode === 'local') return { ok: !user.participant, sup: true };
   if (!user.emailVerified) return { ok: false, why: 'unverified' };
   if (store.isSuper(user)) return { ok: true, sup: true };
   try { const s = await store.db.doc('managers/' + user.email.toLowerCase()).get(); return { ok: s.exists, sup: false }; }
@@ -50,6 +51,7 @@ function shell(ctx, active) {
     ${mgr ? `<a class="btn sm" href="#/admin">כל הקבוצות שלי</a>` : ''}
     <span class="chip" title="${store.mode === 'firebase' ? 'הנתונים נשמרים בענן ומשותפים בזמן אמת' : 'הנתונים נשמרים בדפדפן הזה בלבד'}">${store.mode === 'firebase' ? '☁ נשמר בענן' : 'בדיקות מקומי'}</span>
     <span class="chip">${esc(ctx.me.name || 'אני')}</span>
+    ${!mgr && !ctx.user.isAnonymous && ctx.user.email ? `<button class="btn sm" data-global="password">סיסמה</button>` : ''}
     <button class="btn sm" data-global="signout">יציאה</button></header>
   <nav class="fr tabs" aria-label="ניווט ראשי">${tabs.map(([p, l]) => `<a class="tab ${active === p ? 'on' : ''}" href="#/g/${ctx.gid}${p ? '/' + p : ''}">${l}</a>`).join('')}</nav>
   <main id="view"></main>`;
@@ -119,6 +121,7 @@ function denied(user, mgr) {
 }
 
 document.addEventListener('click', async e => {
+  if (e.target.closest('[data-global="password"]')) { openPasswordDialog(); return; }
   const b = e.target.closest('[data-global="signout"]'); if (!b) return;
   lsSet(LAST_KEY, null); await store.signOut();
   if (store.demo) { lsSet(DEMO_KEY, null); location.hash = '#/'; location.reload(); return; }

@@ -18,11 +18,13 @@ service cloud.firestore {
       allow write: if isSuper();
     }
 
-    // קוד קבוצה -> מזהה קבוצה. קריאה לפי קוד בלבד (get), בלי רשימה.
-    match /joinCodes/{code} {
-      allow get: if signedIn();
+    // עיר -> קבוצת הכניסה שלה. המשתתפים נכנסים עם מייל, בלי קוד: הם בוחרים עיר, והקבוצה נקבעת מכאן. קריאה פתוחה (get בלבד).
+    match /cityGroups/{city} {
+      allow get: if true;
+      allow list: if isManager();
       allow create: if isManager() && isOwner(request.resource.data.gid);
-      allow update, delete: if isManager() && isOwner(resource.data.gid);
+      allow update: if isManager() && isOwner(resource.data.gid) && isOwner(request.resource.data.gid);
+      allow delete: if isManager() && isOwner(resource.data.gid);
     }
 
     // בדיקת חיבור לענן (דף ניהול הקבוצות)
@@ -55,11 +57,13 @@ service cloud.firestore {
       }
 
       match /members/{uid} {
-        allow read: if isOwner(gid) || isMember(gid);
-        // הצטרפות: רק למשתמש.ת עצמו.ה, ורק עם קוד שמצביע על הקבוצה הזו
+        // get: גם המשתמש.ת עצמו.ה (כדי לבדוק אם כבר הצטרף.ה). list: המנהל.ת וחברי הקבוצה.
+        allow get: if (signedIn() && request.auth.uid == uid) || isOwner(gid) || isMember(gid);
+        allow list: if isOwner(gid) || isMember(gid);
+        // הצטרפות: רק למשתמש.ת עצמו.ה, ורק לקבוצת הכניסה של העיר שנבחרה
         allow create: if signedIn() && request.auth.uid == uid
-          && exists(/databases/$(database)/documents/joinCodes/$(request.resource.data.code))
-          && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.code)).data.gid == gid;
+          && exists(/databases/$(database)/documents/cityGroups/$(request.resource.data.city))
+          && get(/databases/$(database)/documents/cityGroups/$(request.resource.data.city)).data.gid == gid;
         allow update: if signedIn() && request.auth.uid == uid;
         allow delete: if isOwner(gid) || (signedIn() && request.auth.uid == uid);
 

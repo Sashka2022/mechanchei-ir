@@ -25,7 +25,15 @@ async function init() {
   const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
   auth = firebase.auth(app); db = firebase.firestore(app);
   googleProvider = new firebase.auth.GoogleAuthProvider();
+  auth.languageCode = 'iw';   // מייל איפוס הסיסמה בעברית
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+}
+
+/* חשבון בלי סיסמה: הסיסמה בפועל נגזרת מהמייל. מי שמגדיר.ה סיסמה מחליפ.ה אותה בסיסמה שלו.ה. */
+const BAD_CREDS = ['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found'];
+async function defaultPw(email) {
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('mhi-open:' + email));
+  return 'mhi-' + [...new Uint8Array(h)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export const store = {
@@ -42,9 +50,33 @@ export const store = {
     if (mode === 'local') return auth.devManagerSignIn(email, name);
     const r = await auth.signInWithPopup(googleProvider); return r.user;
   },
-  async signInParticipant() {
-    if (auth.currentUser && auth.currentUser.isAnonymous) return auth.currentUser;
-    const r = await auth.signInAnonymously(); return r.user || r;
+  /* כניסת משתתף.ת עם מייל. בפעם הראשונה נפתח חשבון בלי סיסמה (הסיסמה הפנימית נגזרת מהמייל), ואפשר להגדיר סיסמה אחר כך.
+     זורק שגיאה עם code: 'need-name' (כניסה ראשונה או סיסמה, חסר שם), 'need-password' או 'wrong-password'. */
+  async signInParticipant(email, name, password) {
+    const e = String(email || '').trim().toLowerCase();
+    if (!e) throw Object.assign(new Error('missing-email'), { code: 'missing-email' });
+    const def = await defaultPw(e);
+    if (password) {
+      try { return { user: (await auth.signInWithEmailAndPassword(e, password)).user }; }
+      catch (x) { throw BAD_CREDS.includes(x.code) ? Object.assign(x, { code: 'wrong-password' }) : x; }
+    }
+    try { return { user: (await auth.signInWithEmailAndPassword(e, def)).user }; }
+    catch (x) { if (!BAD_CREDS.includes(x.code)) throw x; }
+    if (!name) throw Object.assign(new Error('need-name'), { code: 'need-name' });
+    try {
+      const r = await auth.createUserWithEmailAndPassword(e, def);
+      await r.user.updateProfile({ displayName: name });
+      return { user: r.user, isNew: true };
+    } catch (x) { throw x.code === 'auth/email-already-in-use' ? Object.assign(x, { code: 'need-password' }) : x; }
   },
+  /* הגדרת סיסמה, החלפה, או הסרה (next ריק = חזרה לכניסה בלי סיסמה). current = הסיסמה הנוכחית אם יש. */
+  async changePassword(current, next) {
+    const u = auth.currentUser, def = await defaultPw(u.email);
+    try { await auth.signInWithEmailAndPassword(u.email, current || def); }
+    catch (x) { throw BAD_CREDS.includes(x.code) ? Object.assign(x, { code: 'wrong-password' }) : x; }
+    await auth.currentUser.updatePassword(next || def);
+  },
+  /* מייל איפוס סיסמה: מי שמקבל.ת אותו קובע.ת סיסמה חדשה */
+  sendReset: email => auth.sendPasswordResetEmail(String(email || '').trim().toLowerCase()),
   signOut: () => auth.signOut()
 };
