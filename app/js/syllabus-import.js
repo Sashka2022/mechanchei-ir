@@ -7,8 +7,9 @@ import { WS_STEPS } from './model.js';
 export async function readSyllabusFile(file) {
   const name = (file.name || '').toLowerCase();
   if (name.endsWith('.docx')) return docxToText(await file.arrayBuffer());
+  if (name.endsWith('.pdf') || file.type === 'application/pdf') return pdfToText(await file.arrayBuffer());
   if (/\.(txt|md|markdown|text)$/.test(name) || file.type.startsWith('text/')) return file.text();
-  throw new Error(name.endsWith('.doc') ? 'קובץ doc ישן. שמרו אותו כ-docx או הדביקו את הטקסט.' : 'סוג הקובץ לא נתמך. אפשר docx, txt או הדבקת טקסט.');
+  throw new Error(name.endsWith('.doc') ? 'קובץ doc ישן. שמרו אותו כ-docx או הדביקו את הטקסט.' : 'סוג הקובץ לא נתמך. אפשר docx, pdf, txt או הדבקת טקסט.');
 }
 
 async function inflateRaw(bytes) {
@@ -61,6 +62,47 @@ async function docxToText(buf) {
     else out.push(t);
   }
   return out.join('\n');
+}
+
+/* PDF: טוענים את pdf.js רק בעת הצורך, ומרכיבים שורות לפי מיקום אנכי. בשורה עברית הסדר מימין לשמאל. */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+let pdfLib;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return pdfLib || (pdfLib = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = PDFJS + 'pdf.min.js';
+    sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; res(window.pdfjsLib); };
+    sc.onerror = () => { pdfLib = null; rej(new Error('טעינת קורא ה-PDF נכשלה. בדקו חיבור לאינטרנט או הדביקו את הטקסט.')); };
+    document.head.appendChild(sc);
+  }));
+}
+
+async function pdfToText(buf) {
+  const lib = await loadPdfJs();
+  let pdf; try { pdf = await lib.getDocument({ data: buf }).promise; } catch (e) { throw new Error('לא ניתן לקרוא את ה-PDF'); }
+  const out = [];
+  for (let n = 1; n <= pdf.numPages; n++) {
+    const items = (await (await pdf.getPage(n)).getTextContent()).items.filter(i => i.str !== undefined && (i.str.trim() || i.hasEOL));
+    const rows = [];
+    for (const it of items) {
+      const y = it.transform[5], x = it.transform[4];
+      let r = rows.find(r => Math.abs(r.y - y) < 3); if (!r) rows.push(r = { y, parts: [] });
+      r.parts.push({ x, w: it.width || 0, s: it.str });
+    }
+    rows.sort((a, b) => b.y - a.y);
+    let prev = null;
+    for (const r of rows) {
+      const rtl = /[֐-׿]/.test(r.parts.map(p => p.s).join(''));
+      r.parts.sort((a, b) => rtl ? b.x - a.x : a.x - b.x);
+      const line = r.parts.map(p => p.s).join(rtl ? ' ' : '').replace(/\s{2,}/g, ' ').trim();
+      if (prev !== null && prev - r.y > 22) out.push(''); // רווח גדול בין שורות = פסקה חדשה
+      prev = r.y; out.push(line);
+    }
+    out.push('');
+  }
+  const text = out.join('\n').trim();
+  if (!text) throw new Error('ב-PDF אין טקסט שאפשר לקרוא (אולי סריקה). הדביקו את הטקסט ידנית.');
+  return text;
 }
 
 /* ---------- פירוק לתחנות ---------- */

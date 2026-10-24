@@ -33,7 +33,7 @@ export function mountSyllabus(root, ctx) {
       const imp = st.ui.imp;
       const importPanel = !imp ? '' : `<section class="fr"><div class="card editor"><h3 class="t">ייבוא סילבוס ממסמך</h3>
           <p class="hint">מעלים מסמך אחד עם כל הסילבוס והאפליקציה פורסת אותו לתחנות. כל כותרת "תחנה 1", "תחנה 2"… (או כותרת במסמך Word) פותחת תחנה. בתוך תחנה אפשר לכתוב שורות כמו: מקום: …, תאריך: 12.11.2026, שעה: 16:00-19:00, שאלות הכנה: (ורשימה), חומרי קריאה: (ורשימה, עם קישורים), שלב: עץ הבעיה. כל השאר הופך לתיאור התחנה.</p>
-          <label class="l" style="margin-top:12px">קובץ Word (docx), טקסט או Markdown</label><input class="in" type="file" id="impfile" accept=".docx,.txt,.md,.markdown,text/plain">
+          <label class="l" style="margin-top:12px">קובץ Word (docx), PDF, טקסט או Markdown</label><input class="in" type="file" id="impfile" accept=".docx,.pdf,.txt,.md,.markdown,text/plain,application/pdf">
           <label class="l" style="margin-top:12px">או הדביקו את הטקסט כאן</label><textarea class="in" id="imptext" rows="7" placeholder="תחנה 1: ...">${esc(imp.text || '')}</textarea>
           <div class="row" style="margin-top:12px"><button class="btn pri" data-act="parse">פירוק לתחנות</button><button class="btn" data-act="impcancel">ביטול</button></div>
           ${imp.err ? `<p class="hint" style="color:#C0524B;margin-top:10px">${esc(imp.err)}</p>` : ''}
