@@ -77,24 +77,77 @@ function loadPdfJs() {
   }));
 }
 
+const tidy = t => t.replace(/\s+([,.:;?!])/g, '$1').replace(/([\u0590-\u05FF])\s*["״]\s*([\u0590-\u05FF])/g, '$1"$2').replace(/([\u0590-\u05FF])\s+'\s*/g, "$1' ").replace(/\s{2,}/g, ' ').trim();
+const DATE_CELL = /^\d{1,2}(?:-\d{1,2})?\.\d{1,2}\.\d{2,4}$/;
+
+/* טבלת מפגשים (תאריך | סוגיות | שלב | עם מי נפגשים): כל שורה בטבלה הופכת לתחנה, ומוחזר טקסט בפורמט שהמפרק מכיר */
+function pdfTable(pages) {
+  let cols = null, rows = [], ended = false;
+  for (const pg of pages) {
+    if (ended) break;
+    const head = pg.find(p => p.s.trim() === 'תאריך'); let top = Infinity;
+    if (head) {
+      top = head.y - 3;
+      if (!cols) {
+        const hp = pg.filter(p => Math.abs(p.y - head.y) < 3 && p.s.trim()).sort((a, b) => a.x - b.x), cl = [];
+        for (const p of hp) { const c = cl[cl.length - 1]; if (c && p.x - c.right < 10) c.right = Math.max(c.right, p.x + p.w); else cl.push({ right: p.x + p.w }); }
+        if (cl.length < 2) return null;
+        cols = cl.map(c => c.right).sort((a, b) => b - a);
+      }
+    } else if (!cols) continue;
+    let body = pg.filter(p => p.y < top && p.s.trim());
+    const dates = body.filter(p => DATE_CELL.test(p.s.trim()) && Math.abs(p.x + p.w - cols[0]) < 12).sort((a, b) => b.y - a.y);
+    if (!dates.length) { if (rows.length) ended = true; continue; }
+    const size = dates[0].size, stop = body.filter(p => p.size > size + 1.5 && p.y < dates[0].y).sort((a, b) => b.y - a.y)[0];
+    if (stop) { body = body.filter(p => p.y > stop.y + 2); ended = true; }
+    dates.forEach((d, i) => {
+      const lo = i + 1 < dates.length ? dates[i + 1].y : -Infinity, cells = cols.map(() => []);
+      for (const p of body.filter(p => p.y <= d.y + 3 && p.y > lo + 3)) {
+        // הטקסט מיושר לימין: מילה שייכת לעמודה הקרובה ביותר שהקצה הימני שלה נמצא מימין למילה
+        const r = p.x + p.w; let k = 0;
+        cols.forEach((c, j) => { if (c >= r - 8 && c < cols[k]) k = j; else if (cols[k] < r - 8) k = j; });
+        cells[k].push(p);
+      }
+      rows.push(cells.map(c => {
+        c.sort((a, b) => Math.abs(a.y - b.y) < 3 ? b.x - a.x : b.y - a.y);
+        return tidy(c.map(p => p.s).join(' '));
+      }));
+    });
+  }
+  if (rows.length < 2) return null;
+  return rows.map((r, i) => {
+    const [date, issues = '', stage = '', who = ''] = r;
+    let title = issues.split(/[.?!]\s|[.?!]$/)[0] || issues;
+    if (title.length > 80) title = title.slice(0, 80).replace(/\s+\S*$/, '');
+    title = title.replace(/[,:\s]+$/, '') || `מפגש ${i + 1}`;
+    return [`תחנה ${i + 1}: ${title}`, `תאריך: ${date.replace(/^(\d{1,2})-(\d{1,2})\.(\d{1,2}\.\d{2,4})$/, '$1.$3')}${/-/.test(date) ? ' (' + date + ')' : ''}`,
+      issues ? `תיאור: ${issues}` : '', stage ? `שלב: ${stage}
+מרעיון לפעולה: ${stage}` : '', who ? `נפגשים עם: ${who}` : ''].filter(Boolean).join('\n');
+  }).join('\n\n');
+}
+
 async function pdfToText(buf) {
   const lib = await loadPdfJs();
   let pdf; try { pdf = await lib.getDocument({ data: buf }).promise; } catch (e) { throw new Error('לא ניתן לקרוא את ה-PDF'); }
-  const out = [];
+  const pages = [];
   for (let n = 1; n <= pdf.numPages; n++) {
-    const items = (await (await pdf.getPage(n)).getTextContent()).items.filter(i => i.str !== undefined && (i.str.trim() || i.hasEOL));
+    const items = (await (await pdf.getPage(n)).getTextContent()).items.filter(i => i.str !== undefined && i.str.trim());
+    pages.push(items.map(i => ({ x: i.transform[4], y: i.transform[5], w: i.width || 0, size: Math.abs(i.transform[3]) || i.height || 0, s: i.str })));
+  }
+  const table = pdfTable(pages); if (table) return table;
+  const out = [];
+  for (const parts0 of pages) {
     const rows = [];
-    for (const it of items) {
-      const y = it.transform[5], x = it.transform[4];
-      let r = rows.find(r => Math.abs(r.y - y) < 3); if (!r) rows.push(r = { y, parts: [] });
-      r.parts.push({ x, w: it.width || 0, s: it.str });
+    for (const it of parts0) {
+      let r = rows.find(r => Math.abs(r.y - it.y) < 3); if (!r) rows.push(r = { y: it.y, parts: [] });
+      r.parts.push(it);
     }
     rows.sort((a, b) => b.y - a.y);
     let prev = null;
     for (const r of rows) {
-      const rtl = /[֐-׿]/.test(r.parts.map(p => p.s).join(''));
+      const rtl = /[\u0590-\u05FF]/.test(r.parts.map(p => p.s).join(''));
       r.parts.sort((a, b) => rtl ? b.x - a.x : a.x - b.x);
-      const line = r.parts.map(p => p.s).join(rtl ? ' ' : '').replace(/\s{2,}/g, ' ').trim();
+      const line = tidy(r.parts.map(p => p.s).join(rtl ? ' ' : ''));
       if (prev !== null && prev - r.y > 22) out.push(''); // רווח גדול בין שורות = פסקה חדשה
       prev = r.y; out.push(line);
     }
@@ -138,6 +191,7 @@ const pad = n => String(n).padStart(2, '0');
 
 export function parseDate(s, today = new Date()) {
   let d, m, y, hit;
+  s = s.replace(/(\d{1,2})\s*[-–]\s*\d{1,2}(\.\d{1,2}\.\d{2,4})/, '$1$2'); // טווח ימים: לוקחים את הראשון
   let r = /(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?/.exec(s);
   if (r) { d = +r[1]; m = +r[2]; y = r[3] ? +r[3] : 0; hit = r[0]; }
   else {
@@ -157,8 +211,11 @@ export function parseTime(s) {
   return { text: r[3] ? `${a} עד ${pad(+r[3])}:${r[4]}` : a, hit: r[0] };
 }
 
+const STEP_KEYWORDS = [[/עץ ה?בעיה/, 'tree'], [/תיאוריית שינוי/, 'toc'], [/תב.?ר/, 'budget'], [/רעיונ|רעיון לפתרון/, 'ideas'], [/פרזנטציה|פיצ/, 'pitch'], [/גיוס שותפים|שותפים/, 'partners'], [/כאב בטן/, 'phen']];
+
 function matchStep(s) {
   const t = s.replace(/[״"׳']/g, '').trim(); if (!t) return '';
+  const kw = STEP_KEYWORDS.find(([re]) => re.test(t)); if (kw) return kw[1];
   const num = /(?:שלב\s*)?(\d{1,2})\b/.exec(t);
   if (num) { const w = WS_STEPS.find(x => x.n === +num[1]); if (w) return w.id; }
   const norm = x => x.replace(/[״"׳']/g, '');
