@@ -133,6 +133,9 @@ addEventListener('hashchange', () => { if (bootDone) route(); });
   try {
     await store.ready;
     await store.authState();
+    try {   // נפתח מקישור כניסה שנשלח למייל של מנהל.ת
+      if (await store.completeEmailLink()) history.replaceState(null, '', location.pathname + '#/admin');
+    } catch (x) { history.replaceState(null, '', location.pathname + '#/'); alert('הקישור לא תקף או שפג תוקפו. אפשר לבקש קישור חדש מכניסת מנהלים.'); }
     if (store.demo && !store.user) {   // מצב הדגמה: נכנסים ישר כמנהל.ת, והקבוצה לדוגמה נוצרת בפעם הראשונה
       const u = await store.signInManager(DEMO_USER.email, DEMO_USER.name);
       await seedDemo(store.db, u);

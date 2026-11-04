@@ -50,6 +50,22 @@ export const store = {
     if (mode === 'local') return auth.devManagerSignIn(email, name);
     const r = await auth.signInWithPopup(googleProvider); return r.user;
   },
+  /* כניסת מנהלים בלי סיסמה: קישור כניסה חד-פעמי שנשלח למייל (Firebase email link). הקישור מחזיר לעמוד האפליקציה. */
+  async sendManagerLink(email) {
+    const e = String(email || '').trim().toLowerCase();
+    await auth.sendSignInLinkToEmail(e, { url: location.origin + location.pathname, handleCodeInApp: true });
+    try { localStorage.setItem('mhi-mgr-email', e); } catch (x) {}
+  },
+  /* אם הדף נפתח מקישור כניסה במייל, משלימים את הכניסה. מחזיר משתמש, או null אם זה לא קישור כניסה. */
+  async completeEmailLink() {
+    if (mode !== 'firebase' || !auth.isSignInWithEmailLink(location.href)) return null;
+    let e = ''; try { e = localStorage.getItem('mhi-mgr-email') || ''; } catch (x) {}
+    if (!e) e = (prompt('לאישור הכניסה, כתבו את כתובת המייל שאליה נשלח הקישור') || '').trim().toLowerCase();
+    if (!e) return null;
+    const r = await auth.signInWithEmailLink(e, location.href);
+    try { localStorage.removeItem('mhi-mgr-email'); } catch (x) {}
+    return r.user;
+  },
   /* כניסת משתתף.ת עם מייל. בפעם הראשונה נפתח חשבון בלי סיסמה (הסיסמה הפנימית נגזרת מהמייל), ואפשר להגדיר סיסמה אחר כך.
      זורק שגיאה עם code: 'need-name' (כניסה ראשונה או סיסמה, חסר שם), 'need-password' או 'wrong-password'. */
   async signInParticipant(email, name, password) {

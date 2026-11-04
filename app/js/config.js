@@ -12,6 +12,6 @@ export const FIREBASE_CONFIG = {
 /* מפתח ה-API של Firebase ציבורי מטבעו. האבטחה נשענת על firestore.rules ועל הדומיינים המורשים בהגדרות Authentication. */
 
 /* מנהל.ת על: מוסיף.ה מנהלי קבוצות ורואה את כל הקבוצות. חייב להיות זהה לרשימה ב-firestore.rules. */
-export const SUPER_ADMINS = ['edu-design@tfi.org.il', 'tovtuv@gmail.com'];
+export const SUPER_ADMINS = ['edu-design@tfi.org.il', 'tovtuv@gmail.com', 'rotemag@tfi.org.il', 'elinakr@tfi.org.il', 'alexr@tfi.org.il'];
 
 export const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
