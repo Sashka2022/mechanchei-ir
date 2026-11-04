@@ -43,28 +43,21 @@ export const store = {
   get db() { return db; },
   get auth() { return auth; },
   get user() { return auth && auth.currentUser; },
-  isSuper: u => !!(u && u.email && SUPER_ADMINS.includes(u.email.toLowerCase())),
+  isSuper: u => !!(u && ((u.email && SUPER_ADMINS.includes(u.email.toLowerCase())) || (u.isAnonymous && store.adminUid === u.uid))),
   /* מחכה עד שמצב ההתחברות ידוע (אחרי טעינת הדף) */
   authState() { return new Promise(res => { const off = auth.onAuthStateChanged(u => { off(); res(u); }); }); },
   async signInManager(email, name) {
     if (mode === 'local') return auth.devManagerSignIn(email, name);
     const r = await auth.signInWithPopup(googleProvider); return r.user;
   },
-  /* כניסת מנהלים בלי סיסמה: קישור כניסה חד-פעמי שנשלח למייל (Firebase email link). הקישור מחזיר לעמוד האפליקציה. */
-  async sendManagerLink(email) {
-    const e = String(email || '').trim().toLowerCase();
-    await auth.sendSignInLinkToEmail(e, { url: location.origin + location.pathname, handleCodeInApp: true });
-    try { localStorage.setItem('mhi-mgr-email', e); } catch (x) {}
-  },
-  /* אם הדף נפתח מקישור כניסה במייל, משלימים את הכניסה. מחזיר משתמש, או null אם זה לא קישור כניסה. */
-  async completeEmailLink() {
-    if (mode !== 'firebase' || !auth.isSignInWithEmailLink(location.href)) return null;
-    let e = ''; try { e = localStorage.getItem('mhi-mgr-email') || ''; } catch (x) {}
-    if (!e) e = (prompt('לאישור הכניסה, כתבו את כתובת המייל שאליה נשלח הקישור') || '').trim().toLowerCase();
-    if (!e) return null;
-    const r = await auth.signInWithEmailLink(e, location.href);
-    try { localStorage.removeItem('mhi-mgr-email'); } catch (x) {}
-    return r.user;
+  /* כניסת מנהלים עם קוד אחד: כניסה אנונימית, ואז כתיבת הקוד למסמך admins/{uid}. הכללים מאשרים את המסמך רק עם הקוד הנכון. */
+  adminUid: null,
+  async signInAdmin(code) {
+    if (auth.currentUser && !auth.currentUser.isAnonymous) await auth.signOut();
+    const u = auth.currentUser || (await auth.signInAnonymously()).user;
+    try { await db.doc('admins/' + u.uid).set({ code: String(code || '').trim() }); }
+    catch (x) { if (x.code === 'permission-denied') throw Object.assign(x, { code: 'wrong-code' }); throw x; }
+    store.adminUid = u.uid; return u;
   },
   /* כניסת משתתף.ת עם מייל. בפעם הראשונה נפתח חשבון בלי סיסמה (הסיסמה הפנימית נגזרת מהמייל), ואפשר להגדיר סיסמה אחר כך.
      זורק שגיאה עם code: 'need-name' (כניסה ראשונה או סיסמה, חסר שם), 'need-password' או 'wrong-password'. */

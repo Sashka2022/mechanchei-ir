@@ -5,12 +5,20 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function verifiedEmail() { return signedIn() && request.auth.token.email != null && request.auth.token.email_verified == true; }
-    function isSuper() { return verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il', 'tovtuv@gmail.com', 'rotemag@tfi.org.il', 'elinakr@tfi.org.il', 'alexr@tfi.org.il']; }
+    function isCodeAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isSuper() { return isCodeAdmin() || verifiedEmail() && request.auth.token.email.lower() in ['edu-design@tfi.org.il', 'tovtuv@gmail.com', 'rotemag@tfi.org.il', 'elinakr@tfi.org.il', 'alexr@tfi.org.il']; }
     function isManager() { return isSuper() || (verifiedEmail() && exists(/databases/$(database)/documents/managers/$(request.auth.token.email.lower()))); }
     function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
     function isOwner(gid) { return isManager() && (isSuper() || grp(gid).ownerUid == request.auth.uid || request.auth.token.email.lower() in grp(gid).get('managerEmails', [])); }
     function isMember(gid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)); }
     function inTeam(gid, tid) { return signedIn() && exists(/databases/$(database)/documents/groups/$(gid)/teams/$(tid)/roster/$(request.auth.uid)); }
+
+    // כניסת מנהלים עם קוד: מי שכותב.ת את הקוד הנכון יוצר.ת מסמך על ה-uid שלו.ה, וזה מה שהופך אותו.ה למנהל.ת על.
+    // הקוד כאן ובעמוד הכניסה הוא סוד משותף: כל מי שיודע אותו מנהל.ת. להחלפה, משנים כאן ומפרסמים מחדש.
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['code']) && request.resource.data.code == '1111';
+    }
 
     // רשימת מנהלי הקבוצות המורשים
     match /managers/{email} {

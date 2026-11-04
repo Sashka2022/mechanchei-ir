@@ -34,11 +34,11 @@ export function mountLanding(root, { go }) {
   <dialog class="dlg admin" id="adminDlg" aria-labelledby="adminTitle">
     <form id="mgrForm" class="stack" style="gap:14px">
       <div class="jhead"><span class="jlogo adm">${ADMIN_ICON}</span><div><div class="hint" style="font-weight:700">אזור מנהלים</div><h2 id="adminTitle" class="s" style="font-size:28px;font-weight:900;line-height:1.1">כניסת מנהלי קבוצות</h2></div></div>
-      <p class="hint">${local ? 'מצב בדיקות למפתחים: אפשר להיכנס עם כל מייל.' : 'כותבים את המייל ומקבלים קישור כניסה, בלי סיסמה. המייל צריך להיות מורשה מראש. אפשר גם להיכנס עם Google.'}</p>
-      <div><label class="l" for="me">מייל</label><input class="in" id="me" name="email" type="email" dir="ltr" autocomplete="email" placeholder="name@tfi.org.il" required></div>
-      ${local ? `<div><label class="l" for="mn">שם</label><input class="in" id="mn" name="name" placeholder="השם שיוצג למשתתפים"></div>` : ''}
+      <p class="hint">${local ? 'מצב בדיקות למפתחים: אפשר להיכנס עם כל מייל.' : 'כותבים את קוד המנהלים וזהו.'}</p>
+      ${local ? `<div><label class="l" for="me">מייל</label><input class="in" id="me" name="email" type="email" placeholder="name@tfi.org.il" required></div>
+      <div><label class="l" for="mn">שם</label><input class="in" id="mn" name="name" placeholder="השם שיוצג למשתתפים"></div>` : `<div><label class="l" for="mc">קוד מנהלים</label><input class="in" id="mc" name="code" type="password" dir="ltr" inputmode="numeric" autocomplete="off" maxlength="40" required></div>`}
       <div class="hint" id="merr" role="alert" style="min-height:22px"></div>
-      <div class="row"><button class="btn pri" type="submit">${local ? 'כניסה לבדיקות' : 'שליחת קישור כניסה למייל'}</button>${local ? '' : '<button class="btn" type="button" id="mgoogle">כניסה עם Google</button>'}<button class="btn" type="button" data-close>ביטול</button></div>
+      <div class="row"><button class="btn pri" type="submit">${local ? 'כניסה לבדיקות' : 'כניסה'}</button><button class="btn" type="button" data-close>ביטול</button></div>
     </form></dialog>`;
 
   const joinDlg = root.querySelector('#joinDlg'), adminDlg = root.querySelector('#adminDlg');
@@ -95,16 +95,10 @@ export function mountLanding(root, { go }) {
     try {
       const f = new FormData(e.target);
       if (local) { await store.signInManager(f.get('email'), f.get('name')); go('/admin'); }
-      else { await store.sendManagerLink(f.get('email')); err.textContent = 'שלחנו קישור כניסה למייל. פתחו אותו באותו דפדפן. אם הוא לא מגיע, בדקו בספאם.'; btn.disabled = false; }
+      else { await store.signInAdmin(f.get('code')); go('/admin'); }
     } catch (x) {
-      err.textContent = x && x.code === 'auth/popup-closed-by-user' ? '' : x && x.code === 'auth/operation-not-allowed' ? 'כניסה בקישור במייל עוד לא הופעלה בפרויקט. פנו למנהל.ת האפליקציה' : x && x.code === 'auth/invalid-email' ? 'כתובת המייל לא תקינה' : 'הכניסה נכשלה. נסו שוב'; btn.disabled = false;
+      err.textContent = x && x.code === 'wrong-code' ? 'הקוד לא נכון' : x && x.code === 'auth/operation-not-allowed' ? 'כניסה אנונימית לא מופעלת בפרויקט' : 'הכניסה נכשלה. נסו שוב'; btn.disabled = false;
     }
-  });
-  const mg = root.querySelector('#mgoogle');
-  if (mg) mg.addEventListener('click', async () => {
-    const err = root.querySelector('#merr'); err.textContent = ''; mg.disabled = true;
-    try { await store.signInManager(); go('/admin'); }
-    catch (x) { err.textContent = x && x.code === 'auth/popup-closed-by-user' ? '' : 'הכניסה נכשלה. נסו שוב'; mg.disabled = false; }
   });
   return () => { [joinDlg, adminDlg].forEach(d => { try { d.close(); } catch (e) {} }); };
 }

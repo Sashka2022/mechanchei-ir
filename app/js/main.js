@@ -23,8 +23,12 @@ export const go = path => { if (location.hash === '#' + path) route(); else loca
 
 /* האם החשבון המחובר מורשה לנהל קבוצות */
 async function managerStatus(user) {
-  if (!user || user.isAnonymous) return { ok: false };
-  if (store.mode === 'local') return { ok: !user.participant, sup: true };
+  if (!user) return { ok: false };
+  if (store.mode === 'local') return user.isAnonymous ? { ok: false } : { ok: !user.participant, sup: true };
+  if (user.isAnonymous) {   // מנהל.ת שנכנס.ה עם קוד: יש לו.ה מסמך admins/{uid}
+    try { if ((await store.db.doc('admins/' + user.uid).get()).exists) { store.adminUid = user.uid; return { ok: true, sup: true }; } } catch (e) {}
+    return { ok: false };
+  }
   if (!user.emailVerified) return { ok: false, why: 'unverified' };
   if (store.isSuper(user)) return { ok: true, sup: true };
   try { const s = await store.db.doc('managers/' + user.email.toLowerCase()).get(); return { ok: s.exists, sup: false }; }
@@ -133,9 +137,6 @@ addEventListener('hashchange', () => { if (bootDone) route(); });
   try {
     await store.ready;
     await store.authState();
-    try {   // נפתח מקישור כניסה שנשלח למייל של מנהל.ת
-      if (await store.completeEmailLink()) history.replaceState(null, '', location.pathname + '#/admin');
-    } catch (x) { history.replaceState(null, '', location.pathname + '#/'); alert('הקישור לא תקף או שפג תוקפו. אפשר לבקש קישור חדש מכניסת מנהלים.'); }
     if (store.demo && !store.user) {   // מצב הדגמה: נכנסים ישר כמנהל.ת, והקבוצה לדוגמה נוצרת בפעם הראשונה
       const u = await store.signInManager(DEMO_USER.email, DEMO_USER.name);
       await seedDemo(store.db, u);
