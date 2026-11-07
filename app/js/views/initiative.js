@@ -1,33 +1,28 @@
-/* הובלת יוזמה: ארבעה שלבים, צוותים בתוך הקבוצה, ומרחב עבודה לכל צוות (initiative.html).
+/* הובלת יוזמה: לוח קצר (הפרויקט שלי, ארבע תחנות, הפעולה הבאה), צוותים בתוך הקבוצה, ומרחב עבודה במסך מלא (initiative.html).
    האפיון המלא: docs/initiative-process-spec.md */
 import { store } from '../store.js';
 import { esc, toast, confirmDialog, createView, docs, docData, byOrder } from '../ui.js';
-import { STAGES, WS_STEPS, wsLabel, wsStep } from '../model.js';
+import { WS_STATIONS, wsLabel, wsStep, nextStepId, stationOfStep } from '../model.js';
 
 export function mountInitiative(root, ctx, params = {}) {
   return params.tid ? mountWorkspace(root, ctx, params) : mountDashboard(root, ctx);
 }
 
 /* ---------- מרחב עבודה של צוות ---------- */
-/* ה-iframe נוצר פעם אחת. רק כותרת הצוות (מעליו) נטענת מחדש כשהנתונים משתנים, כדי שהעבודה לא תיפסק. */
+/* מסך מלא: ה-iframe הוא כל מה שמוצג. הכותרת, ארבע התחנות והחזרה ללוח נמצאות בתוכו (initiative.html). */
 function mountWorkspace(root, ctx, { tid, step }) {
-  const { gid } = ctx, db = store.db, base = `groups/${gid}`;
-  const q = new URLSearchParams({ g: gid, t: tid }); if (step) q.set('step', step);
-  root.innerHTML = `<div id="wsHead"></div><iframe class="ws" title="מרחב העבודה של הצוות" src="${esc('initiative.html?' + q)}"></iframe>`;
-  return createView(root.querySelector('#wsHead'), {
-    watch: (st, sub) => { sub('team', db.doc(`${base}/teams/${tid}`), docData); sub('members', db.collection(base + '/members'), docs); },
-    render: st => {
-      const t = st.data.team; if (!t) return `<section class="fr"><div class="empty"><b>הצוות לא נמצא</b><a class="btn" href="#/g/${gid}/initiative">חזרה לצוותים</a></div></section>`;
-      const mem = (st.data.members || []).filter(m => m.teamId === tid);
-      return `<section class="fr tight"><div class="row"><a class="btn sm" href="#/g/${gid}/initiative">→ הובלת יוזמה</a><h3 class="s grow">${esc(t.name)}</h3>${mem.map(m => `<span class="chip">${esc(m.name)}</span>`).join('')}</div></section>`;
-    }
-  });
+  const q = new URLSearchParams({ g: ctx.gid, t: tid }); if (step) q.set('step', step);
+  root.innerHTML = `<iframe class="ws" title="מרחב העבודה של הצוות" src="${esc('initiative.html?' + q)}" allow="fullscreen"></iframe>`;
+  document.body.classList.add('wsmode');
+  return () => document.body.classList.remove('wsmode');
 }
 
 /* ---------- לוח הובלת יוזמה ---------- */
+/* דף קצר: מה הפרויקט שלי, איפה אני בארבע התחנות, והפעולה הבאה. פעולות ניהול בנפרד, בתחתית. */
 function mountDashboard(root, ctx) {
   const { gid, isManager, me } = ctx, db = store.db, base = `groups/${gid}`;
   const myDoc = db.doc(`${base}/members/${me.uid}`);
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   return createView(root, {
     watch: (st, sub) => {
       sub('teams', db.collection(base + '/teams'), docs);
@@ -39,41 +34,55 @@ function mountDashboard(root, ctx) {
       const stations = (st.data.stations || []).sort(byOrder);
       const mine = !isManager && (members.find(m => m.id === me.uid) || {}).teamId;
       const myTeam = mine && teams.find(t => t.id === mine);
-      const viewTeam = isManager ? (teams.find(t => t.id === st.ui.viewTeam) || teams[0]) : null;
-      const stationsFor = sid => stations.filter(s => s.step === sid).map(s => s.title);
-      const stageStatus = (t, sg) => { if (!sg.steps) return 'soon'; if (!t) return 'idle'; const p = t.progress || {}; if (p[sg.gate]) return 'done'; return sg.steps.some(x => p[x]) ? 'current' : 'idle'; };
-      const stageCard = sg => {
-        const stat = stageStatus(myTeam || viewTeam, sg);
-        return `<div class="card stage ${stat}"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><span class="hn big">${stat === 'done' ? '✓' : sg.n}</span><div class="grow"><h3 class="s">${sg.title}</h3><p class="hint" style="margin-top:2px">${sg.desc}</p></div>${stat === 'soon' ? '<span class="pill l">בקרוב</span>' : ''}</div>
-          ${sg.steps ? `<div class="stepl">${sg.steps.map(s => {
-            const ok = (myTeam || viewTeam) && (myTeam || viewTeam).progress && (myTeam || viewTeam).progress[s], ws = wsStep(s), tgt = myTeam || (isManager && viewTeam), at = stationsFor(s);
-            const go = tgt ? `<a class="btn sm pri" href="#/g/${gid}/t/${tgt.id}?step=${s}">${myTeam ? 'כניסה לשלב' : 'צפייה בשלב'}</a>` : `<button type="button" class="btn sm" data-act="needTeam">${isManager ? 'פתחו צוות כדי לצפות במסך' : 'צריך קודם צוות'}</button>`;
-            return `<details class="stepd ${ok ? 'ok' : ''}"><summary><span class="hn ${ok ? 'on' : ''}">${ok ? '✓' : ws.n || '·'}</span><span class="grow"><b>${ws.label}</b><span class="hint">${ws.desc || ''}</span></span></summary>
-              <div class="stepb"><ul>${(ws.do || []).map(x => `<li>${x}</li>`).join('')}</ul>${at.length ? `<p class="hint">נלמד בתחנה: ${esc(at.join(' · '))}</p>` : ''}<div class="row">${go}</div></div></details>`;
-          }).join('')}</div>` : `<div class="chips" style="margin-top:14px">${sg.soon.map(x => `<span class="chp">${x}</span>`).join('')}</div>`}
-          <div class="hint" style="margin-top:12px"><b>התוצר:</b> ${sg.out}</div></div>`;
+      const today = new Date().toISOString().slice(0, 10);
+      const nextSyl = stations.find(s => s.step && s.date && s.date >= today);
+
+      /* הצוות שמוצג בראש הלוח: של המשתתפת, ולמנהל.ת הצוות שבחר.ה (ברירת מחדל: הראשון) */
+      const focus = myTeam || (isManager ? (teams.find(t => t.id === st.ui.viewTeam) || teams[0]) : null);
+      const resumeId = t => lsGet('mhn-step-' + t.id + '-id') || nextStepId(t.progress);
+      const progressOf = t => WS_STATIONS.map(x => ({ x, n: x.steps.filter(id => id !== 'board' && (t.progress || {})[id]).length, total: x.steps.filter(id => id !== 'board').length }));
+      const strip = t => `<div class="sstrip">${progressOf(t).map(({ x, n, total }, i) => `<div class="sst ${n === total ? 'done' : n ? 'cur' : ''}"><span class="hn">${n === total ? '✓' : i + 1}</span><b>${x.label}</b><small>${total ? n + ' מתוך ' + total : 'סיכום'}</small></div>`).join('')}</div>`;
+
+      const resume = focus ? (() => {
+        const rid = resumeId(focus), ws = wsStep(rid), stn = stationOfStep(rid), started = Object.values(focus.progress || {}).some(Boolean) || lsGet('mhn-step-' + focus.id + '-id');
+        const mem = members.filter(m => m.teamId === focus.id);
+        return `<section class="fr resume"><div class="eyebrow">${isManager ? 'צפייה בצוות' : 'הפרויקט שלי'}</div><h2 class="t">${esc(focus.name)}</h2>
+          <div class="chips" style="margin-top:8px">${mem.length ? mem.map(m => `<span class="chip">${esc(m.name)}</span>`).join('') : '<span class="hint">אין עדיין חברים</span>'}</div>
+          ${strip(focus)}
+          <div class="next"><div class="grow"><div class="hint" style="font-weight:700">${started ? 'ממשיכים מכאן' : 'מתחילים כאן'}</div><div class="nt">${stn ? 'תחנה ' + (WS_STATIONS.indexOf(stn) + 1) + ' · ' + stn.label + ' · ' : ''}${esc(ws.label)}</div>${ws.desc ? `<div class="hint">${esc(ws.desc)}</div>` : ''}</div>
+            <a class="btn pri big" href="#/g/${gid}/t/${focus.id}?step=${rid}">${started ? 'המשך לעבוד' : (isManager ? 'כניסה לצפייה' : 'כניסה למרחב')}</a></div>
+          ${focus.definition ? `<div class="defmini">${esc(focus.definition)}</div>` : ''}
+          ${nextSyl ? `<p class="hint" style="margin-top:12px">במפגש הבא בסילבוס (${esc(nextSyl.title)}) עובדים על: <b>${esc(wsLabel(nextSyl.step))}</b></p>` : ''}</section>`;
+      })() : '';
+
+      const noTeam = !isManager && !myTeam ? `<section class="fr"><div class="eyebrow">הובלת יוזמה</div><h2 class="t">בואו נתחיל: צוות אחד, יוזמה אחת</h2>
+          <p style="margin:8px 0 14px">העבודה על היוזמה נעשית בצוות. פתחו צוות חדש, או הצטרפו לצוות שכבר פתוח.</p>
+          <form id="newTeam" class="addrow"><input class="in" name="name" required maxlength="60" placeholder="שם לצוות, או לנושא היוזמה"><button class="btn pri" type="submit">פתיחת צוות</button></form>
+          ${teams.length ? `<h3 class="s" style="margin-top:20px">או הצטרפו לצוות קיים</h3><div class="list" style="margin-top:8px">${teams.map(t => `<div class="item"><div class="grow"><b>${esc(t.name)}</b><div class="hint">${members.filter(m => m.teamId === t.id).map(m => esc(m.name)).join(' · ') || 'אין עדיין חברים'}</div></div><button class="btn sm pri" data-act="join" data-id="${t.id}">הצטרפות</button></div>`).join('')}</div>` : ''}</section>` : '';
+
+      const teamRow = t => {
+        const mem = members.filter(m => m.teamId === t.id), pr = progressOf(t), dn = pr.reduce((a, p) => a + p.n, 0), tot = pr.reduce((a, p) => a + p.total, 0);
+        return `<div class="item"><div class="grow"><b>${esc(t.name)}</b>${t.id === mine ? ' <span class="pill">הצוות שלי</span>' : ''}<div class="hint">${mem.map(m => esc(m.name)).join(' · ') || 'אין עדיין חברים'}</div>
+          <div class="prog" style="margin:8px 0 2px"><i style="width:${Math.round(dn / tot * 100)}%"></i></div><div class="hint">${dn} מתוך ${tot} כלים הושלמו</div></div>
+          <a class="btn sm" href="#/g/${gid}/t/${t.id}">${t.id === mine ? 'כניסה' : 'צפייה'}</a>
+          ${isManager ? `<button class="btn sm" data-act="focus" data-id="${t.id}">הצגה בראש הלוח</button>` : ''}</div>`;
       };
-      const tcard = t => {
-        const mem = members.filter(m => m.teamId === t.id), prog = t.progress || {}, total = STAGES[0].steps.length, dn = STAGES[0].steps.filter(s => prog[s]).length;
-        const isMine = mine === t.id;
-        return `<div class="card tcard ${isMine ? 'mine' : ''}"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div class="grow"><h3 class="s">${esc(t.name)}</h3><div class="chips" style="margin-top:8px">${mem.length ? mem.map(m => `<span class="chip">${esc(m.name)}</span>`).join('') : '<span class="hint">אין עדיין חברים</span>'}</div></div>${isMine ? '<span class="pill">הצוות שלי</span>' : ''}</div>
-          <div class="prog" style="margin:14px 0 6px"><i style="width:${Math.round(dn / total * 100)}%"></i></div><div class="hint">${dn} מתוך ${total} שלבי חקירה הושלמו${prog.ideas ? '' : ''}</div>
-          ${t.definition ? `<div class="defmini">${esc(t.definition)}</div>` : ''}
-          <div class="row" style="margin-top:14px"><a class="btn sm ${isMine ? 'pri' : ''}" href="#/g/${gid}/t/${t.id}">${isMine ? 'כניסה למרחב העבודה' : 'צפייה במרחב'}</a>
-            ${!isManager && !isMine ? `<button class="btn sm" data-act="join" data-id="${t.id}">הצטרפות</button>` : ''}${isMine ? `<button class="btn sm" data-act="leave" data-id="${t.id}">יציאה מהצוות</button>` : ''}
-            ${isManager ? `<button class="btn sm" data-act="delTeam" data-id="${t.id}">מחיקה</button>` : ''}</div></div>`;
-      };
-      return `<section class="fr"><div class="sh"><div class="grow"><div class="eyebrow">מסלול הובלת יוזמה</div><h2 class="t">מהכאב אל היוזמה</h2>
-          <p>מגדירים בעיה לפי פרוטוקול הגדרת בעיה, מגיעים לרעיונות ובוחרים פיילוט, ואז בונים תוכנית ואורזים להצגה. כל צוות עובד על יוזמה אחת.</p></div></div></section>
-        <section class="fr"><div class="row" style="margin-bottom:14px"><h3 class="s grow">ארבעה שלבים</h3>${isManager && teams.length ? `<label class="row" style="gap:8px"><span class="hint">צפייה בשלבים של הצוות</span><select class="in" data-change="viewTeam" style="width:auto;min-width:180px">${teams.map(t => `<option value="${t.id}" ${viewTeam && viewTeam.id === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>` : ''}</div><div class="grid2">${STAGES.map(stageCard).join('')}</div></section>
-        ${pitchGallery(teams, members)}
-        <section class="fr" id="teamsSec"><div class="row"><h3 class="s grow">צוותי היוזמה בקבוצה</h3></div>
-          ${teams.length ? `<div class="igrid" style="margin-top:14px">${teams.map(tcard).join('')}</div>` : `<div class="empty" style="margin-top:12px"><b>עוד לא נפתח צוות</b>${isManager ? 'משתתפים יפתחו צוותים בעצמם, ואפשר גם לפתוח מכאן.' : 'פתחו את הצוות הראשון, והזמינו חברים להצטרף.'}</div>`}
-          <form id="newTeam" class="addrow"><input class="in" name="name" required maxlength="60" placeholder="שם לצוות, או לנושא היוזמה"><button class="btn pri" type="submit">${isManager ? 'פתיחת צוות' : 'פתיחת צוות והצטרפות'}</button></form></section>`;
+      const others = teams.filter(t => !focus || t.id !== focus.id);
+      const rows = isManager ? teams : others;
+      const teamsSec = teams.length && (myTeam || isManager) ? `<section class="fr" id="teamsSec"><h3 class="s">${isManager ? 'כל הצוותים בקבוצה' : 'צוותים נוספים בקבוצה'}</h3>
+        <div class="list" style="margin-top:10px">${rows.map(teamRow).join('') || '<div class="hint">אין צוותים נוספים</div>'}</div></section>` : '';
+
+      /* פעולות ניהול: סגורות כברירת מחדל, בנפרד מהעבודה */
+      const manage = isManager ? `<details class="fr mng"><summary><b>ניהול הצוותים</b><span class="hint">פתיחה ומחיקה של צוותים</span></summary>
+          <form id="newTeam" class="addrow" style="margin-top:14px"><input class="in" name="name" required maxlength="60" placeholder="שם לצוות חדש"><button class="btn pri" type="submit">פתיחת צוות</button></form>
+          ${teams.length ? `<div class="list" style="margin-top:12px">${teams.map(t => `<div class="item"><div class="grow">${esc(t.name)}</div><button class="btn sm" data-act="delTeam" data-id="${t.id}">מחיקה</button></div>`).join('')}</div>` : ''}</details>` : '';
+
+      const leave = !isManager && myTeam ? `<section class="fr tight"><div class="row"><span class="hint grow">${members.filter(m => m.teamId === myTeam.id).length} חברים בצוות</span><button class="btn sm" data-act="leave" data-id="${myTeam.id}">יציאה מהצוות</button></div></section>` : '';
+      return `${resume}${noTeam}${teamsSec}${pitchGallery(teams, members)}${leave}${manage}
+        ${isManager && !teams.length ? `<section class="fr"><div class="empty"><b>עוד לא נפתח צוות</b>משתתפות ומשתתפים יפתחו צוותים בעצמם, ואפשר גם לפתוח מ״ניהול הצוותים״ בתחתית.</div></section>` : ''}`;
     },
     after: (st, el) => {
-      const f = el.querySelector('#newTeam');
-      if (f) f.onsubmit = async e => {
+      el.querySelectorAll('#newTeam').forEach(f => f.onsubmit = async e => {
         e.preventDefault(); const name = f.name.value.trim(); if (!name) return; e.submitter.disabled = true;
         try {
           const ref = db.collection(base + '/teams').doc();
@@ -81,11 +90,10 @@ function mountDashboard(root, ctx) {
           if (!isManager) await joinTeam(ref.id, st);
           toast('הצוות נפתח');
         } catch (x) { toast('פתיחת הצוות נכשלה'); e.submitter.disabled = false; }
-      };
+      });
     },
     acts: {
-      viewTeam(d, el, st, redraw) { st.ui.viewTeam = el.value; redraw(); },
-      needTeam() { toast(isManager ? 'עוד אין צוות לפתוח. פתחו צוות למטה' : 'כדי להיכנס לשלב צריך צוות. פתחו צוות או הצטרפו לצוות קיים'); const t = document.getElementById('teamsSec'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+      focus(d, el, st, redraw) { st.ui.viewTeam = d.id; redraw(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
       async join(d, el, st) { try { await joinTeam(d.id, st); toast('הצטרפתם לצוות'); } catch (x) { toast('ההצטרפות נכשלה'); } },
       async leave(d, el, st) { if (await confirmDialog('לצאת מהצוות? העבודה שלו נשארת, ואפשר להצטרף שוב.', 'יציאה')) { try { await leaveTeam(d.id); } catch (x) { toast('היציאה נכשלה'); } } },
       async delTeam(d) { if (await confirmDialog('למחוק את הצוות? חברי הצוות יוצאו ממנו. נתוני העבודה לא יוצגו יותר.', 'מחיקה')) { try { await db.doc(`${base}/teams/${d.id}`).delete(); toast('הצוות נמחק'); } catch (x) { toast('המחיקה נכשלה'); } } }

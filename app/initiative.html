@@ -424,9 +424,78 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 @media (max-width:760px){.toc{grid-template-columns:1fr}.brow{grid-template-columns:1fr 34px}.brow>div:nth-child(3){grid-column:1}}
 body.emb .top .logo{display:none}
 body.emb #app{padding:0}
+
+/* ===== מרחב עבודה חדש: סרגל עליון, ארבע תחנות, משימה אחת, עזרה מקופלת ===== */
+body.emb #app{padding:14px;gap:14px}
+.wbar{position:sticky;top:0;z-index:30;display:flex;flex-direction:column;gap:10px;background:var(--page);padding-bottom:2px}
+.wtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px}
+.wtop .wt{min-width:0;flex:1 1 140px}
+.wtop .wt b{display:block;font-weight:800;font-size:19px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wtop .wt small{display:block;font-size:13px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.save{font-size:13px;font-weight:600;border-radius:999px;padding:4px 12px;background:var(--page);white-space:nowrap}
+.save.ing{background:var(--page);opacity:.85}
+.save.ok:before{content:'✓ ';font-weight:800}
+.save.err,.save.off{background:var(--purple);color:var(--on)}
+.role{font-size:13px;font-weight:700;border-radius:999px;padding:4px 12px;white-space:nowrap}
+.role.w{background:var(--blue);color:var(--on)}.role.h{background:var(--blue2);color:var(--on)}.role.v{background:var(--page)}
+.tmenu{position:relative}.tmenu summary{list-style:none;cursor:pointer}.tmenu summary::-webkit-details-marker{display:none}
+.tmenu:not([open]) .tpop{display:none}
+.tpop{position:absolute;inset-inline-end:0;top:calc(100% + 8px);z-index:40;background:var(--frame);border-radius:var(--R);padding:16px;width:min(340px,86vw);box-shadow:0 12px 40px rgba(0,70,255,.22)}
+.stations{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px}
+.stn{display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:calc(var(--R) - 6px);background:transparent;padding:8px;font-weight:700;font-size:17px;min-height:52px;color:var(--blue)}
+.stn:hover{background:var(--page)}
+.stn .badge{width:32px;height:32px;border-radius:50%;background:var(--page);display:grid;place-items:center;font-weight:800;font-size:15px;flex:0 0 32px}
+.stn small{font-weight:500;font-size:13px;opacity:.8}
+.stn.done .badge{background:var(--blue)}
+.stn.cur{background:var(--blue);color:var(--on)}.stn.cur .badge{background:var(--on);color:var(--blue)}.stn.cur.done .badge{background:var(--on)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;padding:8px}
+.tl{position:relative;border:0;border-radius:999px;background:var(--page);color:var(--blue);padding:8px 16px;font-weight:600;font-size:15px;min-height:40px}
+.tl.done{font-weight:700}.tl.cur{background:var(--blue);color:var(--on)}
+.dot2{position:absolute;top:4px;inset-inline-end:6px;width:9px;height:9px;border-radius:50%;background:var(--purple)}
+.wmain{padding-bottom:6px}
+.wfoot{position:sticky;bottom:0;z-index:25;display:flex;justify-content:space-between;gap:12px;padding:10px 14px;box-shadow:0 -6px 20px rgba(0,70,255,.1)}
+.wfoot .btn{white-space:normal;text-align:start;min-height:46px}
+.task{padding:calc(var(--pad) * .7) var(--pad)}
+.task .sh .num{width:56px;height:56px}
+details.help>summary,details.side2>summary{cursor:pointer;font-weight:700;list-style:none;display:flex;align-items:center;gap:10px}
+details.help>summary::-webkit-details-marker,details.side2>summary::-webkit-details-marker{display:none}
+details.help{background:var(--frame);border-radius:var(--R);padding:14px 22px}
+details.help .hw-grid{margin-top:14px}details.help .hl{padding-inline-start:22px;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+details.help .ex{margin-top:12px;font-size:15px;border-top:3px solid var(--page);padding-top:10px}
+details.side2{padding:14px 22px}
+details.side2>summary::after,details.help>summary::after{content:'';margin-inline-start:auto;width:9px;height:9px;border-inline-end:3px solid var(--blue);border-bottom:3px solid var(--blue);transform:rotate(45deg);transition:transform .2s}
+details.side2[open]>summary::after,details.help[open]>summary::after{transform:rotate(-135deg)}
+details.side2>.fr{padding:16px 0 0;background:transparent;margin-top:10px}
+.welcome{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--blue);color:var(--on)}
+.welcome .btn.pri{background:var(--on);color:var(--blue)}
+.state{max-width:560px;margin:8vh auto;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.state .row{justify-content:center}
+.pstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.pstat ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pstat li{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:500}.pstat li.ok{font-weight:700}
+.chip.tmr{background:var(--blue);color:var(--on)}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--page);border-top-color:var(--blue);animation:spin .9s linear infinite;margin-inline-end:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center}
+@media (max-width:1000px){.wtop .btn:not([data-act=back]) span{display:none}.wtop .btn.sm{min-width:42px;justify-content:center}}
+@media (max-height:700px){.wbar{position:static}}
+@media (max-width:760px){
+  body.emb #app{padding:8px;gap:10px}
+  .wbar{position:static}
+  .wtop{padding:8px 12px;gap:8px}
+  .wtop .wt{flex:1 1 140px}
+  .stations{padding:6px;gap:4px}
+  .stn{flex-direction:column;gap:2px;padding:6px 2px;font-size:14px;min-height:60px}
+  .stn small{font-size:12px}
+  .stn .badge{width:26px;height:26px;flex-basis:26px;font-size:13px}
+  .task{padding:16px}
+  .wfoot{padding:8px 10px}
+  .wfoot .btn{padding:10px 14px;font-size:15px;min-height:48px}
+  .tpop{position:fixed;inset-inline:10px;top:auto;bottom:70px;width:auto}
+}
 </style>
 
-<div id="app" dir="rtl" lang="he"><div class="fr loading">טוענים את המרחב המשותף</div></div>
+<div id="app" dir="rtl" lang="he"><div class="fr loading"><span class="spin" aria-hidden="true"></span>טוענים את מרחב העבודה…</div></div>
 <div id="toast" dir="rtl"><span></span></div>
 
 <script src="js/workspace-host.js"></script>
@@ -475,8 +544,18 @@ const STEPS = [
   { id: 'budget',   n: 8, label: 'מחולל תב״ר',             icon: 'doc',       ext: true, eb: 'שלב תכנון · נגזר מהפעולות' },
   { id: 'partners', n: 9, label: 'גיוס שותפים',            icon: 'people',    ext: true, eb: 'שלב תכנון · נגזר מהשדה' },
   { id: 'pitch',    n: 10, label: 'בונה פרזנטציה ופיצ׳',  icon: 'star',      group: 'אריזה והצגה', ext: true, eb: 'שלב אריזה · נגזר מכל התוצרים' },
-  { id: 'board',    label: 'לוח למליאה',                  icon: 'board' }
+  { id: 'board',    label: 'תיק הפרויקט',                 icon: 'board' }
 ];
+/* ---------- ארבע תחנות: שכבת ניווט מעל הכלים הקיימים. מזהי הכלים (ו-?step=) ונתוני Firestore לא משתנים. ---------- */
+const STATIONS = [
+  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור', steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
+  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', steps: ['ideas', 'toc'] },
+  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות', steps: ['budget', 'partners'] },
+  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים', steps: ['pitch', 'board'] }
+];
+const SHORT = { setup: 'הכנה', phen: 'תופעה', tree: 'עץ הבעיה', insights: 'תובנות', path: 'נתיב קריטי', def: 'הגדרת הבעיה', ideas: 'רעיונות', toc: 'תיאוריית שינוי', budget: 'תב״ר', partners: 'שותפים', pitch: 'פיצ׳', board: 'תיק הפרויקט' };
+const stationOf = id => STATIONS.find(x => x.steps.includes(id));
+const stepIdx = id => STEPS.findIndex(x => x.id === id);
 const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'toc', 'budget', 'funders', 'partners', 'pitch', 'sugg', 'votes', 'live'];
 /* מי יכול לכתוב: ממלא.ת (עורך) כותב את הליבה. מסייעים (תורמים) כותבים רק הצעות, הצבעות והטיימר. */
 const OPEN = new Set(['sugg', 'votes', 'live']);
@@ -498,7 +577,7 @@ const SLABEL = {}; Object.values(SECT).forEach(a => a.forEach(([k, v]) => { SLAB
 
 /* ---------- מצב ---------- */
 const D = {}; COLS.forEach(c => D[c] = {});
-const S = { step: Math.min(+lsGet(WS_KEY) || 0, STEPS.length - 1), pick: { c: null, k: null }, draftIdea: { text: '', target: 'c', assum: '' }, ideaSort: 'order', focus: null, follow: true, draftSugg: { section: '', text: '' }, adoptCol: {}, ready: false, firstSnap: {}, gc: {}, gx: {}, loaded: false, got: {} };
+const S = { step: Math.min(+lsGet(WS_KEY) || 0, STEPS.length - 1), pick: { c: null, k: null }, draftIdea: { text: '', target: 'c', assum: '' }, ideaSort: 'order', focus: null, follow: true, draftSugg: { section: '', text: '' }, adoptCol: {}, ready: false, firstSnap: {}, gc: {}, gx: {}, sg: {}, loaded: false, got: {} };
 let HOST = null, DB = null, LOCAL = false, RO = false, FILLER = true, CANSUG = true, ROOM = null, PEERS = [], ME = { id: null, name: '' }, USER = null, DL = null;
 const NAMES = {};
 const Q = {};   // כתיבות ממתינות
@@ -526,16 +605,25 @@ function patch(col, id, obj, delay = 500) {
   deepAssign(q.patch, obj);
   clearTimeout(q.timer);
   if (delay <= 0) flush(k); else q.timer = setTimeout(() => flush(k), delay);
+  saveUI();
 }
 async function flush(k) {
   const q = Q[k]; if (!q) return;
   if (q.busy) { q.dirty = true; return; }
-  if (!Object.keys(q.patch).length) return;
+  if (!Object.keys(q.patch).length) { delete Q[k]; saveUI(); return; }
   q.inflight = q.patch; q.patch = {}; q.busy = true;
-  try { await writeDoc(q.col, q.id, q.inflight); }
-  catch (e) { writeError(e, q.col); }
+  try { await writeDoc(q.col, q.id, q.inflight); SAVE.err = null; SAVE.last = Date.now(); }
+  catch (e) {
+    const c = e && e.code;
+    if (c === 'permission-denied' || c === 'resource-exhausted') writeError(e, q.col);
+    else {   // כשל זמני (רשת): מחזירים את הכתיבה לתור ומנסים שוב, בלי לאבד את מה שהוקלד
+      const m = clone(q.inflight); deepAssign(m, q.patch); q.patch = m; SAVE.err = c || 'error';
+      q.inflight = null; q.busy = false; clearTimeout(q.timer); q.timer = setTimeout(() => flush(k), 4000); saveUI(); return;
+    }
+  }
   q.inflight = null; q.busy = false;
   if (Object.keys(q.patch).length) flush(k); else delete Q[k];
+  saveUI();
 }
 function writeError(e, col) {
   const c = e && e.code;
@@ -547,10 +635,38 @@ async function add(col, data, focusKey) {
   if (!canWrite(col)) return null;
   const ref = DB.collection(col).doc();
   if (focusKey) S.focus = focusKey.replace('{id}', ref.id);
-  try { await ref.set({ ...data, by: ME.id, ord: Date.now() }); } catch (e) { writeError(e, col); }
+  SAVE.busy++; saveUI();
+  try { await ref.set({ ...data, by: ME.id, ord: Date.now() }); SAVE.last = Date.now(); } catch (e) { writeError(e, col); }
+  SAVE.busy--; saveUI();
   return ref.id;
 }
-async function removeDoc(col, id) { if (!canWrite(col)) return; delete Q[col + '/' + id]; try { await DB.collection(col).doc(id).delete(); } catch (e) { writeError(e, col); } }
+async function removeDoc(col, id) {
+  if (!canWrite(col)) return; delete Q[col + '/' + id]; SAVE.busy++; saveUI();
+  try { await DB.collection(col).doc(id).delete(); SAVE.last = Date.now(); } catch (e) { writeError(e, col); }
+  SAVE.busy--; saveUI();
+}
+
+/* ---------- חיווי שמירה, שמירה בעת יציאה ושחזור אחרי ניתוק ---------- */
+const SAVE = { busy: 0, err: null, last: 0 };
+const pendingCount = () => Object.keys(Q).length + SAVE.busy;
+function saveUI() {
+  const el = $('#saveInd'); if (!el) return;
+  let cls = 'ok', txt;
+  if (!navigator.onLine) { cls = 'off'; txt = 'אין חיבור · נשמור כשיחזור'; }
+  else if (SAVE.err) { cls = 'err'; txt = 'לא נשמר עדיין · מנסים שוב'; }
+  else if (pendingCount()) { cls = 'ing'; txt = 'שומר…'; }
+  else if (SAVE.last) txt = 'נשמר ' + new Date(SAVE.last).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  else txt = RO && !LOCAL ? 'מצב צפייה' : 'נשמר אוטומטית';
+  if (el.className !== 'save ' + cls) el.className = 'save ' + cls;
+  if (el.textContent !== txt) el.textContent = txt;
+}
+function flushAll() { Object.keys(Q).forEach(k => { const q = Q[k]; if (q) { clearTimeout(q.timer); flush(k); } }); }
+async function waitSaved(ms = 4000) { flushAll(); const t0 = Date.now(); while (pendingCount() && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 100)); }
+addEventListener('online', () => { SAVE.err = null; flushAll(); saveUI(); });
+addEventListener('offline', saveUI);
+addEventListener('pagehide', flushAll);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushAll(); });
+addEventListener('beforeunload', ev => { if (pendingCount()) { flushAll(); ev.preventDefault(); ev.returnValue = ''; } });
 
 /* ---------- טיימר משותף ---------- */
 function tLeft() { const t = LV('timer') || {}; if (t.running) return Math.max(0, Math.round((t.endsAt - Date.now()) / 1000)); return t.left != null ? t.left : (t.total || 600); }
@@ -567,7 +683,7 @@ let lastAlarm = 0;
 setInterval(() => {
   const t = LV('timer') || {}; const tt = $('#tt'); if (!tt) return;
   const l = tLeft(); tt.textContent = fmtT(l);
-  const el = $('#timer'); if (el) el.classList.toggle('low', !!t.running && l <= 60);
+  const el = $('#timer'); if (el) el.classList.toggle('low', !!t.running && l <= 60); const t2 = $('#tt2'); if (t2) t2.textContent = fmtT(l);
   if (t.running && l <= 0 && lastAlarm !== t.endsAt) { lastAlarm = t.endsAt; toast('נגמר הזמן לשלב. אחראי.ת הזמנים, זה הרגע לסכם'); if (LV('timeUid') === ME.id) patch('live', 'session', { timer: { running: false, left: 0, endsAt: null } }, 0); }
 }, 500);
 function timerAct(a, n) {
@@ -617,7 +733,7 @@ const iVoted = id => !!V('votes', id + '_' + ME.id, 'v');
 const openCount = stepId => list('sugg').filter(x => x.step === stepId && (V('sugg', x.id, 'status') || 'open') === 'open').length;
 function helperNotice() {
   const d = meta().driverUid, gs = M('groupStep');
-  return `<div class="notice deep"><b>אתם מסייעים</b><span>${d ? esc(nameOf(d)) : 'הממלא.ת'} ממלא.ת את המסמך, ואתם רואים אותו בזמן אמת. שלחו הצעות בתחתית כל שלב.</span>
+  return `<div class="notice deep"><b>${HOST.isRoster ? 'אתם מסייעים' : 'אתם צופים'}</b><span>${d ? esc(nameOf(d)) : 'הממלא.ת'} ממלא.ת את המסמך, ואתם רואים אותו בזמן אמת. ${CANSUG ? 'אפשר לשלוח הצעות דרך ״הצעה לצוות״ בתחתית המסך.' : ''}</span>
     ${HOST.isRoster ? '<button class="btn" data-act="takeDriver">אני לוקח.ת את המקלדת</button>' : ''}${S.follow ? '<span class="pill l">עוקבים אחרי הממלא.ת</span>' : (gs != null ? `<button class="btn" data-act="followOn">חזרה לשלב של הממלא.ת · ${esc(STEPS[gs].label)}</button>` : '')}</div>`;
 }
 function peersHTML() {
@@ -716,27 +832,28 @@ function render() {
   const st = STEPS[S.step];
   const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, pitch: pitchHTML, board: boardHTML }[st.id]();
   const prev = STEPS[S.step - 1], next = STEPS[S.step + 1];
-  const dn = STEPS.filter(s => done(s.id)).length;
-  const gs = M('groupStep');
+  const stn = stationOf(st.id), sIdx = STATIONS.indexOf(stn);
+  const sgHTML = suggHTML(st), ntHTML = st.id === 'board' ? '' : notesHTML(st), oc = openCount(st.id);
+  const panel = sgHTML || ntHTML ? `<details class="fr side2" ${S.sg[st.id] ? 'open' : ''}><summary><b>${FILLER && !LOCAL ? 'הצעות מהצוות והערות' : (LOCAL ? 'הערות' : 'הצעה לצוות והערות')}</b>${FILLER && !LOCAL && oc ? `<span class="pin cnt">${oc} פתוחות</span>` : ''}</summary>${sgHTML}${ntHTML}</details>` : '';
+  const welcome = !lsGet(WELCOME_KEY) && !STEPS.some(x => done(x.id)) ? `<section class="fr welcome"><div class="grow"><h3 class="s">ברוכים הבאים למרחב היוזמה</h3>
+      <p>העבודה מחולקת לארבע תחנות: <b>בעיה ← רעיון ← התנסות ← למידה</b>. עכשיו אתם בתחנה 1. ${FILLER ? 'כתבו את השאלה המובילה של הצוות, ואז לחצו ״הבא״ בתחתית המסך.' : 'מי שממלא.ת את המסמך כותב.ת, ואתם רואים הכול בזמן אמת ויכולים להציע.'} ההתקדמות נשמרת אוטומטית, ואפשר לחזור בכל רגע.</p></div><button class="btn pri" data-act="welcomeOk">הבנתי</button></section>` : '';
+  const tm = LV('timer') || {}, tmRun = tm.running ? `<span class="chip tmr">${ic('timer', 'blue', 18)} <b id="tt2">${fmtT(tLeft())}</b></span>` : '';
   root.innerHTML = `
-    ${LOCAL ? `<div class="notice deep"><b>מצב בדיקות למפתחים</b><span>הנתונים נשמרים בדפדפן הזה בלבד ולא בענן.</span></div>` : ''}
+    <div class="wbar">
+      <header class="fr wtop"><button class="btn sm" data-act="back" aria-label="חזרה ללוח היוזמה">${ar('blue', 'rv')}<span>ללוח</span></button>
+        <div class="wt grow"><b>${esc(HOST.teamName || 'צוות')}</b><small>${esc(M('question') || 'עוד אין שאלה מובילה')}</small></div>
+        ${tmRun}${roleBadge()}<span id="saveInd" class="save" role="status" aria-live="polite"></span>
+        <details class="tmenu"><summary class="btn sm" aria-label="צוות וטיימר">${ic('group', 'blue', 20)}<span>צוות</span></summary><div class="tpop">${teamPanel()}</div></details>
+        <button class="btn sm ${st.id === 'board' ? 'pri' : ''}" data-act="openExport" aria-label="תיק הפרויקט">${ic('doc', st.id === 'board' ? 'white' : 'blue', 20)}<span>תיק</span></button>
+      </header>
+      <nav class="fr stations" aria-label="ארבע תחנות">${STATIONS.map((x, i) => { const n = x.steps.filter(done).length, full = n === x.steps.length;
+        return `<button class="stn ${i === sIdx ? 'cur' : ''} ${full ? 'done' : ''}" data-act="goStation" data-i="${i}" ${i === sIdx ? 'aria-current="step"' : ''}><span class="badge">${full ? ic('check', i === sIdx ? 'blue' : 'white', 18) : i + 1}</span><span class="nm">${x.label}</span><small>${n}/${x.steps.length}</small></button>`; }).join('')}</nav>
+    </div>
+    ${stn.steps.length > 1 ? `<div class="fr tools" role="group" aria-label="כלים בתחנה ${stn.label}">${stn.steps.map(id => `<button class="tl ${id === st.id ? 'cur' : ''} ${done(id) ? 'done' : ''}" data-act="go" data-i="${stepIdx(id)}">${done(id) ? '✓ ' : ''}${SHORT[id]}${FILLER && !LOCAL && openCount(id) ? `<span class="dot2" aria-label="יש הצעות פתוחות"></span>` : ''}</button>`).join('')}</div>` : ''}
     ${!FILLER && !LOCAL ? helperNotice() : ''}
-    <header class="fr top"><img class="logo" src="${A.logo}" alt="חותם · אחריות לחינוך בישראל">
-      <div class="name grow">מחנכי עיר מפצחים כאב בטן<small>${esc(M('question') || 'עבודה בקבוצות · הגדרת בעיה ורעיונות לפתרון')}</small></div>
-      ${meta().driverUid ? `<span class="chip drv">${ic('pencil', 'blue', 18)} ממלא.ת · <b>${esc(nameOf(meta().driverUid))}${meta().driverUid === ME.id ? ' · אתם' : ''}</b></span>` : ''}
-      <button class="btn sm top-save" data-act="openExport" aria-label="שמירה והדפסה">${ic('doc', 'blue', 20)}<span>שמירה והדפסה</span></button>
-      ${timerHTML()}</header>
-    <div class="main">
-      <aside class="fr side" aria-label="שלבי התהליך"><div class="prog" title="${dn} מתוך ${STEPS.length}"><i style="width:${Math.round(dn / STEPS.length * 100)}%"></i></div><nav>
-        ${STEPS.map((s, i) => `${s.group ? `<div class="grp">${s.group}</div>` : ''}<button class="sb ${i === S.step ? 'cur' : ''} ${done(s.id) ? 'done' : ''}" data-act="go" data-i="${i}">
-          <span class="badge">${done(s.id) ? ic('check', i === S.step ? 'blue' : 'white', 20) : (s.n || ic(s.icon, 'blue', 20))}</span><span class="nm">${s.label}</span>${gs === i ? '<span class="pin">הקבוצה כאן</span>' : ''}${FILLER && !LOCAL && openCount(s.id) ? `<span class="pin cnt" title="הצעות פתוחות">${openCount(s.id)}</span>` : ''}</button>`).join('')}</nav>
-        <div class="roles2"><div class="grp">בצוות</div><div class="chips" style="padding:0 6px;flex-direction:column;align-items:flex-start"><span class="chip">אחראי.ת זמנים · <b>${LV('timeUid') ? esc(nameOf(LV('timeUid'))) : 'פנוי'}</b></span>${peersHTML()}</div></div></aside>
-      <div class="stack">
-        ${body}
-        ${suggHTML(st)}
-        ${st.id === 'board' ? '' : notesHTML(st)}
-        <div class="nav">${prev ? `<button class="btn" data-act="go" data-i="${S.step - 1}">${ar('blue', 'rv')} ${prev.label}</button>` : '<span></span>'}${next ? `<button class="btn pri" data-act="go" data-i="${S.step + 1}">${next.label} ${ar('white')}</button>` : '<span></span>'}</div>
-      </div></div>`;
+    <main class="stack wmain" id="wmain">${welcome}${body}${panel}</main>
+    <footer class="fr wfoot">${prev ? `<button class="btn" data-act="go" data-i="${S.step - 1}">${ar('blue', 'rv')} <span>${stationOf(prev.id) !== stn ? 'לתחנה הקודמת · ' : ''}${SHORT[prev.id]}</span></button>` : '<span></span>'}
+      ${next ? `<button class="btn pri" data-act="go" data-i="${S.step + 1}"><span>${stationOf(next.id) !== stn ? `לתחנה הבאה · ${stationOf(next.id).label} · ` : ''}${SHORT[next.id]}</span> ${ar('white')}</button>` : '<button class="btn pri" data-act="back">סיום · חזרה ללוח</button>'}</footer>`;
   root.classList.toggle('ro', RO);
   if (RO) $$('textarea,input,select', root).forEach(el => { if (el.dataset.addin === 'sugg' || el.dataset.open) return; el.readOnly = true; if (el.tagName === 'SELECT') el.disabled = true; });
   $$('textarea', root).forEach(autosize);
@@ -750,13 +867,23 @@ function render() {
   scrollTo(0, sy);
   fixNav(oldNav, oldStep);
   resolveNames();
-  reportProgress();
+  reportProgress(); saveUI();
 }
-function fixNav(left, oldStep) {
-  const nav = $('.side nav'); if (!nav || !matchMedia('(max-width:980px)').matches) return;
-  if (left != null && oldStep === S.step) { nav.scrollLeft = left; return; }
-  const cur = $('.sb.cur', nav); if (cur) { const nb = nav.getBoundingClientRect(), cb = cur.getBoundingClientRect(); nav.scrollLeft += (cb.left + cb.width / 2) - (nb.left + nb.width / 2); }
+const WELCOME_KEY = 'mhn-welcome-' + (new URLSearchParams(location.search).get('t') || 'local');
+function roleBadge() {
+  if (LOCAL) return '<span class="chip">בדיקות מקומי</span>';
+  if (FILLER) return '<span class="role w" title="אתם מקלידים בשם הצוות">אתם כותבים</span>';
+  if (HOST.isRoster) return '<span class="role h" title="הממלא.ת כותב.ת, אתם מציעים">אתם מסייעים</span>';
+  return `<span class="role v" title="צפייה בעבודת הצוות">${CANSUG ? 'צפייה · אפשר להציע' : 'צפייה בלבד'}</span>`;
 }
+function teamPanel() {
+  const d = meta().driverUid;
+  return `<div class="stack" style="gap:10px"><div class="hint" style="font-weight:700">הצוות עכשיו</div>
+    <div class="chips"><span class="chip">${ic('pencil', 'blue', 18)} ממלא.ת · <b>${d ? esc(nameOf(d)) + (d === ME.id ? ' · אתם' : '') : 'עדיין אין'}</b></span>
+      <span class="chip">אחראי.ת זמנים · <b>${LV('timeUid') ? esc(nameOf(LV('timeUid'))) : 'פנוי'}</b></span>${peersHTML()}</div>
+    <div class="hint" style="font-weight:700;margin-top:6px">טיימר משותף</div>${timerHTML()}</div>`;
+}
+function fixNav() {}
 function autosize(el) { if (el.tagName !== 'TEXTAREA') return; el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; }
 let nameBusy = false;
 async function resolveNames() {
@@ -775,20 +902,21 @@ const by = it => it.by ? `<div class="by">${esc(nameOf(it.by))}</div>` : '';
 const addRow = (kind, ph, btn = 'הוספה') => `<div class="addrow w"><input class="in" type="text" data-addin="${kind}" placeholder="${esc(ph)}"><button class="btn pri" data-act="add" data-kind="${kind}">${btn}</button></div>`;
 const emptyBox = (t, d) => `<div class="empty"><b>${t}</b>${d}</div>`;
 function stepHead(s, desc) {
-  return `<section class="fr"><div class="sh"><div class="num">${s.n ? `<span style="font-weight:900;font-size:28px;color:var(--on)">${s.n}</span>` : ic(s.icon, 'white', 34)}</div><div class="grow">
-    <div class="eyebrow ${s.ext ? 'ext' : ''}">${s.ext ? (s.eb || 'שלב נוסף · נגזר מהגדרת הבעיה') : groupOf(s)}</div><h2 class="t">${s.label}</h2><p>${desc}</p></div></div></section>`;
+  const stn = stationOf(s.id), i = STATIONS.indexOf(stn), k = stn.steps.indexOf(s.id) + 1;
+  return `<section class="fr task"><div class="sh"><div class="num">${ic(s.icon, 'white', 34)}</div><div class="grow">
+    <div class="eyebrow">תחנה ${i + 1} · ${stn.label}${stn.steps.length > 1 ? ` · שלב ${k} מתוך ${stn.steps.length}` : ''}</div><h2 class="t">${s.label}</h2><p>${desc}</p></div></div></section>`;
 }
 function groupOf(s) { for (let i = STEPS.indexOf(s); i >= 0; i--) if (STEPS[i].group) return STEPS[i].group; return ''; }
 function guide(items, { title = 'הוראות לשלב', ordered = true, ex = '' } = {}) {
-  const open = true;
+  const open = !!S.gx[STEPS[S.step].id];
   const tag = ordered ? 'ol' : 'ul';
   return `<details class="guide" ${open ? 'open' : ''}><summary>${ic('note', 'blue', 24)} ${title}</summary><${tag}>${items.map(i => `<li>${i}</li>`).join('')}</${tag}>${ex ? `<div class="ex">${ex}</div>` : ''}</details>`;
 }
 function how(quick, more = [], ex = '') {
   const open = !!S.gc[STEPS[S.step].id];
-  return `<section class="fr how"><h3 class="s" style="margin-bottom:12px">מה עושים בשלב הזה</h3>
+  return `<details class="more help" ${open ? 'open' : ''}><summary>${ic('note', 'blue', 22)} איך עושים את זה · ${quick.length} צעדים</summary>
     <div class="hw-grid">${quick.map((t, i) => `<div class="hw"><span class="hn">${i + 1}</span><span>${t}</span></div>`).join('')}</div>
-    ${more.length || ex ? `<details class="more" ${open ? 'open' : ''}><summary>הסבר מלא${ex ? ' ודוגמה' : ''}</summary><ul>${more.map(m => `<li>${m}</li>`).join('')}</ul>${ex ? `<div class="ex">${ex}</div>` : ''}</details>` : ''}</section>`;
+    ${more.length ? `<ul class="hl">${more.map(m => `<li>${m}</li>`).join('')}</ul>` : ''}${ex ? `<div class="ex">${ex}</div>` : ''}</details>`;
 }
 function notesHTML(s) {
   return `<section class="fr"><label class="l" for="${fid('notes', s.id, 'text')}">הערות לשלב הזה${meta().driverUid ? ' · ' + esc(nameOf(meta().driverUid)) : ''}</label>
@@ -811,17 +939,12 @@ function driverCard() {
 }
 function setupHTML() {
   const s = STEPS[0];
-  return `<section class="hero"><div class="fr blue copy"><div class="patw" aria-hidden="true"><i style="background-image:url(${A.pat})"></i></div><div class="hint" style="font-weight:700;opacity:1">אחריות לחינוך בישראל · עבודה בקבוצות</div>
-      <h1 class="h-xl"><span class="a">מחנכי עיר</span><span class="b">מפצחים כאב בטן</span></h1>
-      <p class="lede" style="max-width:520px">מגדירים בעיה יחד, צעד אחר צעד, ומשם יוצאים לרעיונות לפתרון.</p><div class="dot" aria-hidden="true">כולם כותבים יחד · בזמן אמת</div></div>
-    <div class="photo"><img src="${A.photo}" alt="קבוצת אנשי חינוך עובדת יחד סביב שולחן"></div></section>
-  <section class="fr"><div class="quote">הקדשת זמן להגדרת הבעיה מאפשרת פתרון טוב מאוד.</div><p class="hint" style="margin-top:8px">הנחת היסוד של הפרוטוקול</p></section>
-  <section class="fr"><h3 class="s" style="margin-bottom:6px">השאלה המובילה</h3><p style="margin-bottom:14px">השאלה שבגללה התכנסתם. היא תלווה את כל השלבים.</p>
-    <label class="l" for="${fid('meta', 'session', 'question')}">השאלה</label>${ta('meta', 'session', 'question', 'כתבו כאן את השאלה שבגללה התכנסתם')}</section>
-  <div class="grid2"><section class="fr">${driverCard()}</section>
-    <section class="fr">${roleCard('timeUid', 'timer', 'אחראי.ת זמנים', 'מנהל.ת את הזמן. הטיימר בראש המסך משותף לכולם.')}</section></div>
-  <section class="fr"><h3 class="s" style="margin-bottom:14px">שלבי המסלול</h3>
-    <div class="grid3">${STEPS.filter(x => x.n).map(x => `<button class="card" style="border:0;text-align:start;color:inherit" data-act="go" data-i="${STEPS.indexOf(x)}"><div class="row" style="margin-bottom:6px">${ic(x.icon, 'blue', 28)}<span class="pill">${x.n}</span></div><b style="font-size:18px">${x.label}</b></button>`).join('')}</div></section>`;
+  return stepHead(s, 'כותבים את השאלה שבגללה התכנסתם. היא תלווה את כל העבודה.') +
+  `<section class="fr"><label class="l" for="${fid('meta', 'session', 'question')}">השאלה המובילה</label>${ta('meta', 'session', 'question', 'לדוגמה: למה תלמידים בשכונה שלנו מפסיקים להגיע לבית הספר?')}
+    <p class="hint" style="margin-top:8px">הנחת היסוד של הפרוטוקול: הקדשת זמן להגדרת הבעיה מאפשרת פתרון טוב מאוד.</p></section>
+  <details class="more help"><summary>${ic('group', 'blue', 22)} תפקידים בצוות · ממלא.ת ואחראי.ת זמנים</summary>
+    <div class="grid2" style="margin-top:14px">${driverCard()}
+      ${roleCard('timeUid', 'timer', 'אחראי.ת זמנים', 'מנהל.ת את הזמן. הטיימר המשותף נמצא בתפריט ״צוות״ בראש המסך.')}</div></details>`;
 }
 
 /* ---------- 1 · תופעה ---------- */
@@ -1167,9 +1290,10 @@ function planReportHTML(e) {
 function boardHTML() {
   const ch = curPath(); const ids = ch ? [...chainTo(ch.causeNode), ...chainTo(ch.consNode)].map(n => n.id) : [];
   const as = list('assumptions'), stars = list('ideas').filter(i => V('ideas', i.id, 'star'));
-  return `<section class="fr"><div class="sh"><div class="num">${ic('board', 'white', 34)}</div><div class="grow"><div class="eyebrow">תלו במליאה</div><h2 class="t">לוח למליאה</h2><p>עץ הבעיה עם הנתיב הקריטי מסומן, ובתחתיתו ההגדרה וההנחות. מוכן להצגה, להעתקה ולשמירה.</p>
+  return `<section class="fr"><div class="sh"><div class="num">${ic('board', 'white', 34)}</div><div class="grow"><div class="eyebrow">תחנה 4 · למידה</div><h2 class="t">תיק הפרויקט</h2><p>כל מה שהצוות בנה, במקום אחד ומתעדכן לבד: הבעיה, ההנחות, הרעיון, התכנון והפיצ׳. מוכן להצגה, להעתקה ולשמירה.</p>
     <div class="row" style="margin-top:16px">${IN_ARTIFACT ? '' : '<button class="btn pri" data-act="printDoc">הדפסה</button>'}<button class="btn ${IN_ARTIFACT ? 'pri' : ''}" data-act="saveHtml">שמירה כמסמך להדפסה</button><button class="btn" data-act="saveDoc">שמירה כ־Word</button><button class="btn" data-act="saveText">שמירה כטקסט</button><button class="btn" data-act="copyText">העתקה כטקסט</button></div>
     <p class="hint" style="margin-top:10px">${IN_ARTIFACT ? 'פותחים את המסמך שנשמר, בוחרים הדפסה ושומרים כ־PDF.' : 'בחלון ההדפסה אפשר לבחור שמירה כ־PDF.'}</p></div></div></section>
+  ${portfolioStatus()}
   <section class="fr board"><div class="hint" style="font-weight:700">השאלה המובילה</div><div class="q">${esc(M('question') || 'עוד לא נכתבה שאלה מובילה')}</div>
     <h3 class="s">עץ הבעיה · הנתיב הקריטי מסומן</h3>${treeHTML('view', hlOf(ids))}</section>
   <section class="defbox"><div class="hint" style="font-weight:700;margin-bottom:8px;opacity:1">הגדרת הבעיה</div><div class="sent">${defSentence()}</div></section>
@@ -1177,6 +1301,9 @@ function boardHTML() {
     ${M('hmw') ? `<h3 class="s">שאלת ״איך נוכל…״</h3><p class="lede">${esc(M('hmw'))}</p>` : ''}
     <h3 class="s">רעיונות שסומנו לפיילוט</h3>${stars.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${stars.map(x => `<li>${esc(V('ideas', x.id, 'text') || '')} <span class="hint">· ${votesOf(x.id)} קולות</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא סומנו רעיונות לפיילוט</span>'}</section>
   <section class="fr board">${planBoardHTML()}</section>${pitchBoardHTML() ? `<section class="fr board">${pitchBoardHTML()}</section>` : ''}`;
+}
+function portfolioStatus() {
+  return `<section class="fr"><h3 class="s">איפה אנחנו</h3><div class="pstat">${STATIONS.map((x, i) => `<div class="card"><b>תחנה ${i + 1} · ${x.label}</b><ul>${x.steps.filter(id => id !== 'board').map(id => `<li class="${done(id) ? 'ok' : ''}"><span>${done(id) ? '✓' : '○'} ${SHORT[id]}</span>${done(id) ? '' : `<button class="btn sm lt" data-act="go" data-i="${stepIdx(id)}">להשלמה</button>`}</li>`).join('') || '<li class="hint">—</li>'}</ul></div>`).join('')}</div></section>`;
 }
 function boardText() {
   const L = [], RATE = { s: 'חזק', m: 'בינוני', w: 'חלש' };
@@ -1304,8 +1431,14 @@ function printDoc() {
 /* ---------- פעולות ---------- */
 const ADDCOL = { needs: 'needs', gaps: 'gaps', phens: 'phens', insights: 'insights', assumptions: 'assumptions' };
 const ACT = {
+  async back() { await waitSaved(); HOST.back(); },
+  welcomeOk() { lsSet(WELCOME_KEY, '1'); render(); },
+  goStation(e) {
+    const x = STATIONS[+e.i], cur = stationOf(STEPS[S.step].id); if (x === cur) return;
+    const k = x.steps.findIndex(id => !done(id)); ACT.go({ i: stepIdx(x.steps[k < 0 ? 0 : k]) });
+  },
   go(e) {
-    S.step = +e.i; lsSet(WS_KEY, S.step);
+    S.step = +e.i; lsSet(WS_KEY, S.step); lsSet(WS_KEY + '-id', STEPS[S.step].id);
     if (FILLER && !LOCAL) patch('meta', 'session', { groupStep: S.step }, 0); else if (!FILLER) S.follow = false;
     if (ROOM) ROOM.presence({ step: S.step }).catch(() => {});
     render(); scrollTo(0, 0);
@@ -1396,7 +1529,7 @@ const ACT = {
   presOpen() { S.pres = 0; presRender(); },
   presClose() { S.pres = null; presRender(); },
   presGo(e) { S.pres += +e.d; presRender(); },
-  openExport() { S.step = STEPS.length - 1; lsSet(WS_KEY, S.step); render(); scrollTo(0, 0); },
+  openExport() { ACT.go({ i: STEPS.length - 1 }); },
   tToggle: () => timerAct('tToggle'), tReset: () => timerAct('tReset'), tAdd: e => timerAct('tAdd', +e.n)
 };
 function syncDef(p) {
@@ -1436,13 +1569,22 @@ document.addEventListener('input', ev => {
   if (el.dataset.f.startsWith('def.')) { const d = $('.defbox .sent'); if (d) d.innerHTML = defSentence(); }
 });
 document.addEventListener('change', ev => { const el = ev.target; if (el.dataset && el.dataset.sugcol) S.adoptCol[el.dataset.sugcol] = el.value; });
-document.addEventListener('toggle', ev => { const d = ev.target; if (!d.classList) return; if (d.classList.contains('more')) S.gc[STEPS[S.step].id] = d.open; if (d.classList.contains('guide')) S.gx[STEPS[S.step].id] = d.open; }, true);
+document.addEventListener('toggle', ev => { const d = ev.target; if (!d.classList) return; if (d.classList.contains('more')) S.gc[STEPS[S.step].id] = d.open; if (d.classList.contains('guide')) S.gx[STEPS[S.step].id] = d.open; if (d.classList.contains('side2')) S.sg[STEPS[S.step].id] = d.open; }, true);
 addEventListener('resize', () => $$('textarea').forEach(autosize));
 
 /* ---------- אתחול ---------- */
 (async function boot() {
   try { HOST = await window.MHI_HOST; }
-  catch (e) { $('#app').innerHTML = '<div class="fr loading">לא מצאנו את הצוות הזה. חזרו לדף ״הובלת יוזמה״ באפליקציה.</div>'; return; }
+  catch (e) {
+    const why = String((e && e.message) || e), M2 = {
+      'no-session': ['צריך להיכנס מחדש', 'החיבור לאפליקציה נותק. חזרו לדף הכניסה והיכנסו עם המייל שלכם.', 'לדף הכניסה'],
+      'no-team': ['הצוות לא נמצא', 'ייתכן שהצוות נמחק או שהקישור שגוי. אפשר לחזור ללוח היוזמה ולבחור צוות.', 'ללוח היוזמה'],
+      'forbidden': ['אין לכם גישה לצוות הזה', 'הצוות שייך לקבוצה אחרת, או שעוד לא הצטרפתם לקבוצה. בקשו ממנהל.ת הקבוצה.', 'ללוח היוזמה']
+    }[why] || ['לא הצלחנו לטעון את המרחב', 'בדקו את החיבור לאינטרנט ונסו שוב.', 'לוח היוזמה'];
+    $('#app').innerHTML = `<section class="fr state"><h2 class="t">${M2[0]}</h2><p>${M2[1]}</p><div class="row"><button class="btn pri" onclick="location.reload()">נסו שוב</button><button class="btn" id="stBack">${M2[2]}</button></div></section>`;
+    $('#stBack').onclick = () => { const h = why === 'no-session' ? '#/' : '#/g/' + (new URLSearchParams(location.search).get('g') || '') + '/initiative'; try { parent.location.hash = h; } catch (x) { location.href = 'index.html' + h; } };
+    return;
+  }
   USER = { profiles: async ids => Object.fromEntries(ids.map(i => [i, { name: HOST.names[i] || '' }])) };
   DB = HOST.db; LOCAL = HOST.local;
   ME = { id: HOST.me.id, name: HOST.me.name };

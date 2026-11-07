@@ -98,8 +98,8 @@ async function route() {
     }
     lsSet(LAST_KEY, isManager ? null : gid);
     const ctx = { gid, group, isManager, user, me, go };
-    if (sec === 't' && seg[3]) {   // מרחב עבודה של צוות: מסך מלא בתוך המעטפת
-      const root = setMain(shell(ctx, 'initiative'));
+    if (sec === 't' && seg[3]) {   // מרחב עבודה של צוות: מסך מלא, בלי מעטפת האפליקציה (יש כפתור חזרה אחד בתוך המרחב)
+      const root = setMain('<div id="view"></div>');
       cleanup = mountInitiative(root, ctx, { tid: seg[3], step: q.get('step') || '' });
       return;
     }

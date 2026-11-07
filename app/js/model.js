@@ -14,7 +14,7 @@ export const WS_STEPS = [
   { id: 'budget',   label: 'מחולל תב״ר',              n: 8, desc: 'מסגרת תקציב ויעדי מימון לפיילוט.', do: ['סעיפי תקציב לפי הפעולות בתיאוריית השינוי', 'גורמי מימון וסטטוס כל אחד: טרם פנינו, בפנייה, אושר', 'רק מימון שאושר נספר כמכוסה'] },
   { id: 'partners', label: 'גיוס שותפים',             n: 9, desc: 'ממפים מי תומך, מי יכול לעצור ומי מחזיק נכסים.', do: ['רושמים גורמים עירוניים וקהילתיים', 'לכל גורם: תפקיד (תומך, ווטו, נכס), סטטוס הקשר וצעד הבא', 'גורם עם ווטו שעוד לא פנינו אליו הוא הסיכון הראשון לטפל בו'] },
   { id: 'pitch',    label: 'בונה פרזנטציה ופיצ׳',      n: 10, desc: 'אורזים לפיצ׳ של שלוש דקות ולהצגה במסך מלא.', do: ['כותבים שמונה חלקים, עם מילוי מהנתונים של השלבים הקודמים', 'עוקבים אחרי זמן הדיבור מול שלוש דקות', 'מציגים במסך מלא עם חיצים'] },
-  { id: 'board',    label: 'לוח למליאה', desc: 'לוח למליאה: הכול במקום אחד להצגה ולשמירה.', do: ['מציגים את עץ הבעיה עם הנתיב הקריטי מסומן', 'שומרים כ-Word או מסמך להדפסה, או מעתיקים כטקסט'] }
+  { id: 'board',    label: 'תיק הפרויקט', desc: 'תיק הפרויקט: הכול במקום אחד להצגה ולשמירה.', do: ['מציגים את עץ הבעיה עם הנתיב הקריטי מסומן', 'שומרים כ-Word או מסמך להדפסה, או מעתיקים כטקסט'] }
 ];
 export const wsLabel = id => (WS_STEPS.find(s => s.id === id) || {}).label || '';
 export const wsStep = id => WS_STEPS.find(s => s.id === id) || { label: id };
@@ -31,6 +31,17 @@ export const STAGES = [
   { id: 's4', n: 4, title: 'אריזה והצגה', desc: 'אורזים את היוזמה להצגה בסיום התכנית.',
     steps: ['pitch'], gate: 'pitch', out: 'פיצ׳ של שלוש דקות ופרזנטציה מוכנה להצגה' }
 ];
+
+/* ארבע התחנות של מרחב העבודה (אותה חלוקה כמו STATIONS ב-initiative.html). הכלים הם מזהי WS_STEPS. */
+export const WS_STATIONS = [
+  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור',  steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
+  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', steps: ['ideas', 'toc'] },
+  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות',       steps: ['budget', 'partners'] },
+  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים',    steps: ['pitch', 'board'] }
+];
+/* הכלי הבא שעוד לא הושלם, לפי הסטטוס ש-initiative.html מדווח בתוך מסמך הצוות (team.progress) */
+export const nextStepId = progress => { const p = progress || {}; const x = WS_STEPS.find(w => w.id !== 'board' && !p[w.id]); return x ? x.id : 'board'; };
+export const stationOfStep = id => WS_STATIONS.find(x => x.steps.includes(id));
 
 export const LIB_CATS = ['יזמות', 'מנהיגות', 'הוגנות', 'סוגיות חינוכיות', 'נתוני העיר'];
 /* ״1111״ בשדה המייל בדף הכניסה פותח את מצב ההדגמה. */
