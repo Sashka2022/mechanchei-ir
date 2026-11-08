@@ -9,6 +9,15 @@ const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean
 const parseReadings = s => lines(s).map(l => { const [t, ...u] = l.split('|'); const url = u.join('|').trim(); return url ? { title: t.trim(), url } : { title: t.trim(), url: '' }; });
 const readingsText = r => (r || []).map(x => x.url ? `${x.title} | ${x.url}` : x.title).join('\n');
 
+/* הסבר מדויק לכשל כתיבה, במקום "נכשל" סתמי */
+const writeErr = x => {
+  const c = (x && x.code) || '';
+  if (/permission/.test(c)) return 'אין הרשאה לכתוב לקבוצה הזו. התנתקו והיכנסו שוב כמנהל.ת (קוד או חשבון מורשה).';
+  if (/unavailable|network/.test(c) || (typeof navigator !== 'undefined' && navigator.onLine === false)) return 'אין חיבור לאינטרנט, נסו שוב.';
+  if (/unauthenticated/.test(c)) return 'ההתחברות פגה. התחברו שוב.';
+  return (x && x.message) || String(c || 'שגיאה לא ידועה');
+};
+
 export function mountSyllabus(root, ctx) {
   const { gid } = ctx, db = store.db, base = `groups/${gid}`;
   return createView(root, {
@@ -39,7 +48,7 @@ export function mountSyllabus(root, ctx) {
           ${imp.err ? `<p class="hint" style="color:#C0524B;margin-top:10px">${esc(imp.err)}</p>` : ''}
           ${imp.parsed ? `<div style="margin-top:16px"><b>נמצאו ${imp.parsed.length} תחנות. בדקו לפני שמירה:</b><div class="list" style="margin-top:8px">${imp.parsed.map((p, i) => `<div class="item stn"><span class="hn">${i + 1}</span><div class="grow" style="padding:4px 8px"><b>${esc(p.title)}</b>
             <div class="hint">${esc(fmtDate(p.date, p.time))}${p.place ? ' · ' + esc(p.place) : ''}${p.step ? ' · ' + esc(wsLabel(p.step)) : ''}${p.prep.length ? ' · ' + p.prep.length + ' שאלות הכנה' : ''}${p.readings.length ? ' · ' + p.readings.length + ' חומרי קריאה' : ''}</div></div></div>`).join('')}</div>
-            <div class="row" style="margin-top:12px"><button class="btn pri" data-act="impsave" data-mode="add">הוספה לסוף הסילבוס</button>${list.length ? `<button class="btn" data-act="impsave" data-mode="replace">החלפת כל התחנות הקיימות</button>` : ''}</div>
+            <div class="row" style="margin-top:12px"><button class="btn pri" data-act="impsave" data-mode="add" ${imp.busy ? 'disabled' : ''}>${imp.busy ? 'שומרים…' : 'הוספה לסוף הסילבוס'}</button>${list.length ? `<button class="btn" data-act="impsave" data-mode="replace" ${imp.busy ? 'disabled' : ''}>החלפת כל התחנות הקיימות</button>` : ''}</div>
             <p class="hint">אחרי היבוא אפשר לערוך כל תחנה בנפרד, לשנות סדר או למחוק.</p></div>` : ''}</div></section>`;
       return `<section class="fr"><div class="sh"><div class="grow"><div class="eyebrow">סילבוס · ${esc(g.name)}</div><h2 class="t">מסע התחנות</h2>
           <p>מגדירים את התחנות של הקבוצה בסדר שבו הן קורות. המשתתפים רואים אותן רק אחרי שמפרסמים.</p></div></div>
@@ -53,19 +62,20 @@ export function mountSyllabus(root, ctx) {
       const fi = el.querySelector('#impfile');
       if (fi) fi.onchange = async () => {
         const f = fi.files[0]; if (!f) return;
+        fi.disabled = true; toast('קוראים את הקובץ…');
         try { const text = await readSyllabusFile(f); st.ui.imp = { text, parsed: parseSyllabus(text) }; if (!st.ui.imp.parsed.length) st.ui.imp.err = 'לא נמצא טקסט במסמך.'; }
         catch (x) { st.ui.imp = { text: '', err: x.message || 'קריאת הקובץ נכשלה' }; }
         st.redraw();
       };
       el.querySelectorAll('form.editor').forEach(f => f.onsubmit = async e => {
-        e.preventDefault(); const btn = e.submitter; btn.disabled = true;
+        e.preventDefault(); const btn = e.submitter || f.querySelector('button[type=submit]'); btn.disabled = true;
         const d = Object.fromEntries(new FormData(f).entries()), sid = f.dataset.sid;
         const data = { title: d.title.trim(), place: d.place.trim(), date: d.date || '', time: d.time.trim(), description: d.description.trim(), prep: lines(d.prep), readings: parseReadings(d.readings), step: d.step || '' };
         try {
           if (sid) await db.doc(`${base}/stations/${sid}`).set(data, { merge: true });
           else { const max = Math.max(0, ...(st.data.stations || []).map(s => s.order || 0)); await db.collection(base + '/stations').doc().set({ ...data, order: max + 1 }); }
           st.ui.edit = null; toast('התחנה נשמרה'); st.redraw();
-        } catch (x) { toast('השמירה נכשלה'); btn.disabled = false; }
+        } catch (x) { toast('השמירה נכשלה. ' + writeErr(x)); btn.disabled = false; }
       });
     },
     acts: {
@@ -77,15 +87,21 @@ export function mountSyllabus(root, ctx) {
         st.ui.imp = { text, parsed, err: parsed.length ? '' : 'לא הוזן טקסט.' }; redraw();
       },
       async impsave(d, el, st, redraw) {
-        const imp = st.ui.imp; if (!imp || !imp.parsed || !imp.parsed.length) return;
+        const imp = st.ui.imp; if (!imp || !imp.parsed || !imp.parsed.length || imp.busy) return;
         const old = st.data.stations || [];
         if (d.mode === 'replace' && !(await confirmDialog(`למחוק ${old.length} תחנות קיימות ולהחליף ב-${imp.parsed.length} התחנות מהמסמך? אי אפשר לשחזר.`, 'החלפה'))) return;
+        imp.busy = true; imp.err = ''; redraw();   // נועלים את הכפתורים: לחיצה כפולה יצרה תחנות כפולות
+        let done = 0;
         try {
           if (d.mode === 'replace') await Promise.all(old.map(s => db.doc(`${base}/stations/${s.id}`).delete()));
           const start = d.mode === 'replace' ? 0 : Math.max(0, ...old.map(s => s.order || 0));
-          for (let i = 0; i < imp.parsed.length; i++) await db.collection(base + '/stations').doc().set({ ...imp.parsed[i], order: start + i + 1 });
+          for (let i = 0; i < imp.parsed.length; i++) { await db.collection(base + '/stations').doc().set({ ...imp.parsed[i], order: start + i + 1 }); done++; }
           st.ui.imp = null; toast(`נוצרו ${imp.parsed.length} תחנות`); redraw();
-        } catch (x) { toast('הייבוא נכשל'); }
+        } catch (x) {
+          imp.busy = false;
+          imp.err = `הייבוא נכשל${done ? ` אחרי ${done} תחנות (הן נשמרו, אפשר לבדוק בסילבוס)` : ''}. ${writeErr(x)}`;
+          redraw();
+        }
       },
       add(d, el, st, redraw) { st.ui.edit = 'new'; redraw(); },
       edit(d, el, st, redraw) { st.ui.edit = d.id; redraw(); },

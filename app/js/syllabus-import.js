@@ -13,6 +13,7 @@ export async function readSyllabusFile(file) {
 }
 
 async function inflateRaw(bytes) {
+  if (typeof DecompressionStream === 'undefined') throw new Error('הדפדפן לא תומך בקריאת Word. עדכנו אותו, שמרו את המסמך כ-PDF, או הדביקו את הטקסט.');
   const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(s).arrayBuffer());
 }
