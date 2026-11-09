@@ -32,16 +32,26 @@ export const STAGES = [
     steps: ['pitch'], gate: 'pitch', out: 'פיצ׳ של שלוש דקות ופרזנטציה מוכנה להצגה' }
 ];
 
-/* ארבע התחנות של מרחב העבודה (אותה חלוקה כמו STATIONS ב-initiative.html). הכלים הם מזהי WS_STEPS. */
+/* ארבע התחנות של מרחב העבודה (אותה חלוקה כמו STATIONS ב-initiative.html).
+   main = המסך הראשי של התחנה (תוצר אחד). steps = הכלים הקיימים, שנפתחים לפי הצורך תחת ״העמקה״.
+   מזהי הכלים (WS_STEPS) ו-?step= הישנים נשארים תקפים. */
 export const WS_STATIONS = [
-  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור',  steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
-  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', steps: ['ideas', 'toc'] },
-  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות',       steps: ['budget', 'partners'] },
-  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים',    steps: ['pitch', 'board'] }
+  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור',  main: 'sProblem', steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
+  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', main: 'sIdea',    steps: ['ideas'] },
+  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות',       main: 'sPilot',   steps: ['toc', 'budget', 'partners'] },
+  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים',    main: 'sLearn',   steps: ['pitch', 'board'] }
 ];
-/* הכלי הבא שעוד לא הושלם, לפי הסטטוס ש-initiative.html מדווח בתוך מסמך הצוות (team.progress) */
+export const STATION_MAIN = WS_STATIONS.map(s => s.main);
+/* הכלי הבא שעוד לא הושלם, לפי הסטטוס ש-initiative.html מדווח בתוך מסמך הצוות (team.progress). נשמר לתאימות לאחור. */
 export const nextStepId = progress => { const p = progress || {}; const x = WS_STEPS.find(w => w.id !== 'board' && !p[w.id]); return x ? x.id : 'board'; };
-export const stationOfStep = id => WS_STATIONS.find(x => x.steps.includes(id));
+export const stationOfStep = id => WS_STATIONS.find(x => x.steps.includes(id) || x.main === id);
+
+/* סימון השלמה של תחנות: ידני ומשותף לצוות, נשמר ברמת הפרויקט בשדה team.stationsDone (נפרד מ-progress). */
+export const stationDone = (team, id) => !!(((team || {}).stationsDone || {})[id]);
+/* התחנה הראשונה שטרם סומנה; null כשהכול מסומן */
+export const firstOpenStation = team => WS_STATIONS.find(x => !stationDone(team, x.id)) || null;
+/* לאן מוביל כפתור ״המשך״: המסך הראשי של התחנה הראשונה שלא סומנה, ואחרי הכול תיק הפרויקט */
+export const continueTarget = team => { const x = firstOpenStation(team); return x ? { step: x.main, label: 'המשך', station: x } : { step: 'board', label: 'פתיחת תיק הפרויקט', station: null }; };
 
 export const LIB_CATS = ['יזמות', 'מנהיגות', 'הוגנות', 'סוגיות חינוכיות', 'נתוני העיר'];
 /* ״1111״ בשדה המייל בדף הכניסה פותח את מצב ההדגמה. */

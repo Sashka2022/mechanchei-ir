@@ -55,6 +55,7 @@ export function createLocalDb() {
       collection: name => colRef(path + '/' + name),
       get: async () => docSnap(colPath, id),
       set: async (d, opts) => {
+        if (lsGet('mhi-dev-fail') === '1') throw Object.assign(new Error('unavailable'), { code: 'unavailable' });   // בדיקות: מדמה כשל כתיבה
         const m = (data[colPath] = data[colPath] || {});
         if (opts && opts.merge && m[id]) deepAssign(m[id], clone(d)); else m[id] = clone(d);
         persist(); emit(colPath);
@@ -64,7 +65,7 @@ export function createLocalDb() {
         if (!m || m[id] === undefined) throw Object.assign(new Error('not-found'), { code: 'not-found' });
         deepAssign(m[id], clone(d)); persist(); emit(colPath);
       },
-      delete: async () => { if (data[colPath]) delete data[colPath][id]; persist(); emit(colPath); },
+      delete: async () => { if (lsGet('mhi-dev-fail') === '1') throw Object.assign(new Error('unavailable'), { code: 'unavailable' }); if (data[colPath]) delete data[colPath][id]; persist(); emit(colPath); },
       onSnapshot: (fn, err) => listen(colPath, () => fn(docSnap(colPath, id)))
     };
   }

@@ -57,6 +57,42 @@ h3.s{font-size:24px;font-weight:700;line-height:1.2}
 .timer.low .tbtn{background:var(--on);color:var(--purple)}
 .tbtn:hover{background:var(--blue);color:var(--on)}
 
+
+/* ---- סרגל ארבע תחנות ---- */
+.sbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px}
+.sb4{display:flex;align-items:stretch;border-radius:calc(var(--R) - 6px);background:var(--page);overflow:hidden;min-height:52px}
+.sb4.cur{background:var(--blue);color:var(--on)}
+.sbn{flex:1;min-width:0;border:0;background:transparent;color:inherit;font-weight:700;font-size:17px;padding:6px 10px;min-height:48px;text-align:center}
+.sb4:not(.cur) .sbn:hover{background:rgba(0,70,255,.08)}
+.sbc{flex:0 0 52px;border:0;background:transparent;color:inherit;display:grid;place-items:center;padding:0;min-height:48px}
+.sbc span{width:26px;height:26px;border-radius:50%;border:2.5px solid currentColor;display:grid;place-items:center;font-weight:800;font-size:16px;line-height:1}
+.sb4.done .sbc span{background:var(--blue);color:var(--on);border-color:var(--blue)}
+.sb4.cur.done .sbc span{background:var(--on);color:var(--blue);border-color:var(--on)}
+.sbc:focus-visible,.sbn:focus-visible{outline:2px solid var(--purple);outline-offset:-3px}
+.sbc[disabled]{opacity:.5;cursor:progress}
+#app.ro .sbc{cursor:default}
+/* ---- מי עורך עכשיו ---- */
+.editbar{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;border-radius:var(--R);padding:10px 18px;font-size:15px}
+.editbar b{font-size:16px}
+.ed-e{background:var(--blue);color:var(--on)}
+.ed-h{background:var(--blue2);color:var(--on)}
+.ed-v{background:var(--frame)}
+.editbar .btn{background:var(--on);color:var(--blue);padding:6px 16px;font-size:15px}
+.ed-v .btn{background:var(--page)}
+.savebar{padding:12px 18px}
+.savebar .hint{opacity:.95}
+.save.idle{opacity:.75}
+/* ---- מסכי התחנות הראשיים ---- */
+details.deepen{background:var(--frame);border-radius:var(--R);padding:14px 22px}
+details.deepen>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+details.deepen>summary::-webkit-details-marker{display:none}
+details.deepen>summary::after{content:'';margin-inline-start:auto;width:9px;height:9px;border-inline-end:3px solid var(--blue);border-bottom:3px solid var(--blue);transform:rotate(45deg);transition:transform .2s}
+details.deepen[open]>summary::after{transform:rotate(-135deg)}
+.kv{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:4px 12px;margin:0}.kv dt{font-weight:700}.kv dd{margin:0;overflow-wrap:anywhere}
+ul.plain{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px}
+.tl.back{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:760px){.sbar{grid-template-columns:repeat(2,minmax(0,1fr))}.editbar{padding:10px 14px}.kv{grid-template-columns:1fr}}
+
 /* ---- layout ---- */
 .main{display:grid;grid-template-columns:292px minmax(0,1fr);gap:var(--R);align-items:start}
 .side{position:sticky;top:var(--R);padding:20px 16px;max-height:calc(100vh - 2*var(--R));overflow-y:auto}
@@ -521,7 +557,10 @@ const getP = (o, p) => p.split('.').reduce((a, k) => a == null ? undefined : a[k
 const nest = (p, v) => p.split('.').reduceRight((a, k) => ({ [k]: a }), v);
 function deepAssign(t, s) { for (const k in s) { if (s[k] && typeof s[k] === 'object' && !Array.isArray(s[k])) { t[k] = t[k] && typeof t[k] === 'object' ? t[k] : {}; deepAssign(t[k], s[k]); } else t[k] = s[k]; } return t; }
 const clone = o => JSON.parse(JSON.stringify(o));
-const WS_KEY = 'mhn-step-' + (new URLSearchParams(location.search).get('t') || 'local');
+const TID = new URLSearchParams(location.search).get('t') || 'local';
+const WS_KEY = 'mhn-step-' + TID;
+const PEND_KEY = 'mhn-pend-' + TID, DRAFT_KEY = 'mhn-draft-' + TID;   // כתיבות שטרם אושרו וטיוטות: נשמרות מקומית ומשוחזרות בכניסה הבאה
+const jget = k => { try { return JSON.parse(lsGet(k) || 'null'); } catch (e) { return null; } };
 const LET = ['א', 'ב', 'ג', 'ד'];
 const SOURCES = ['מומחים', 'בעלי עניין', 'אינטרנט', 'נתוני הארגון', 'ארגונים דומים'];
 const TYPES = { proven: 'מוכחת', hyp: 'השערה', value: 'ערכית' };
@@ -544,22 +583,29 @@ const STEPS = [
   { id: 'budget',   n: 8, label: 'מחולל תב״ר',             icon: 'doc',       ext: true, eb: 'שלב תכנון · נגזר מהפעולות' },
   { id: 'partners', n: 9, label: 'גיוס שותפים',            icon: 'people',    ext: true, eb: 'שלב תכנון · נגזר מהשדה' },
   { id: 'pitch',    n: 10, label: 'בונה פרזנטציה ופיצ׳',  icon: 'star',      group: 'אריזה והצגה', ext: true, eb: 'שלב אריזה · נגזר מכל התוצרים' },
-  { id: 'board',    label: 'תיק הפרויקט',                 icon: 'board' }
+  { id: 'board',    label: 'תיק הפרויקט',                 icon: 'board' },
+  /* המסכים הראשיים של ארבע התחנות: תוצר אחד לכל תחנה. מוספים בסוף כדי ש-groupStep ושמירת המקום הישנים (אינדקסים) יישארו תקפים. */
+  { id: 'sProblem', label: 'הבעיה שלנו',   icon: 'attention', main: true },
+  { id: 'sIdea',    label: 'הרעיון שלנו',  icon: 'idea',      main: true },
+  { id: 'sPilot',   label: 'ניסוי בבית ספר', icon: 'target',  main: true },
+  { id: 'sLearn',   label: 'מה למדנו',     icon: 'board',     main: true }
 ];
 /* ---------- ארבע תחנות: שכבת ניווט מעל הכלים הקיימים. מזהי הכלים (ו-?step=) ונתוני Firestore לא משתנים. ---------- */
 const STATIONS = [
-  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור', steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
-  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', steps: ['ideas', 'toc'] },
-  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות', steps: ['budget', 'partners'] },
-  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים', steps: ['pitch', 'board'] }
+  { id: 'problem', label: 'בעיה',   sub: 'מה הכאב שבוחרים לפתור', main: 'sProblem', steps: ['setup', 'phen', 'tree', 'insights', 'path', 'def'] },
+  { id: 'idea',    label: 'רעיון',  sub: 'מה הפתרון ואיך הוא משנה', main: 'sIdea', steps: ['ideas'] },
+  { id: 'pilot',   label: 'התנסות', sub: 'מה צריך כדי לנסות', main: 'sPilot', steps: ['toc', 'budget', 'partners'] },
+  { id: 'learn',   label: 'למידה',  sub: 'מה למדנו ואיך מציגים', main: 'sLearn', steps: ['pitch', 'board'] }
 ];
-const SHORT = { setup: 'הכנה', phen: 'תופעה', tree: 'עץ הבעיה', insights: 'תובנות', path: 'נתיב קריטי', def: 'הגדרת הבעיה', ideas: 'רעיונות', toc: 'תיאוריית שינוי', budget: 'תב״ר', partners: 'שותפים', pitch: 'פיצ׳', board: 'תיק הפרויקט' };
-const stationOf = id => STATIONS.find(x => x.steps.includes(id));
+const DEEP = { problem: 'העמקה', idea: 'השוואת רעיונות', pilot: 'תיאוריית שינוי, תקציב ושותפים', learn: 'הצגה ושיתוף' };
+const SHORT = { setup: 'הכנה', phen: 'תופעה', tree: 'עץ הבעיה', insights: 'תובנות', path: 'נתיב קריטי', def: 'הגדרת הבעיה', ideas: 'רעיונות', toc: 'תיאוריית שינוי', budget: 'תב״ר', partners: 'שותפים', pitch: 'פיצ׳', board: 'תיק הפרויקט', sProblem: 'הבעיה', sIdea: 'הרעיון', sPilot: 'הניסוי', sLearn: 'הלמידה' };
+const stationOf = id => STATIONS.find(x => x.steps.includes(id) || x.main === id);
 const stepIdx = id => STEPS.findIndex(x => x.id === id);
 const COLS = ['meta', 'needs', 'gaps', 'phens', 'nodes', 'insights', 'paths', 'assumptions', 'ideas', 'notes', 'toc', 'budget', 'funders', 'partners', 'pitch', 'sugg', 'votes', 'live'];
 /* מי יכול לכתוב: ממלא.ת (עורך) כותב את הליבה. מסייעים (תורמים) כותבים רק הצעות, הצבעות והטיימר. */
 const OPEN = new Set(['sugg', 'votes', 'live']);
 const SECT = {
+  sProblem: [['note', 'הערה']], sIdea: [['ideas', 'רעיון'], ['note', 'הערה']], sPilot: [['note', 'הערה']], sLearn: [['note', 'הערה']],
   setup: [['note', 'הערה']],
   phen: [['needs', 'צורך'], ['gaps', 'פער'], ['phens', 'תופעה'], ['note', 'הערה']],
   tree: [['causeRoot', 'גורם חדש'], ['causeDeep', 'העמקה: למה?'], ['consRoot', 'השלכה חדשה'], ['consDeep', 'העמקה: ומה ההשלכה?'], ['note', 'הערה']],
@@ -577,11 +623,16 @@ const SLABEL = {}; Object.values(SECT).forEach(a => a.forEach(([k, v]) => { SLAB
 
 /* ---------- מצב ---------- */
 const D = {}; COLS.forEach(c => D[c] = {});
-const S = { step: Math.min(+lsGet(WS_KEY) || 0, STEPS.length - 1), pick: { c: null, k: null }, draftIdea: { text: '', target: 'c', assum: '' }, ideaSort: 'order', focus: null, follow: true, draftSugg: { section: '', text: '' }, adoptCol: {}, ready: false, firstSnap: {}, gc: {}, gx: {}, sg: {}, loaded: false, got: {} };
+const S = { step: lsGet(WS_KEY) == null ? STEPS.findIndex(x => x.id === 'sProblem') : Math.min(+lsGet(WS_KEY) || 0, STEPS.length - 1), pick: { c: null, k: null }, draftIdea: { text: '', target: 'c', assum: '' }, draftQ: '', dp: {}, stBusy: {}, loadErr: null, slow: false, restored: false, drvPending: false, lastDriver: null, ideaSort: 'order', focus: null, follow: true, draftSugg: { section: '', text: '' }, adoptCol: {}, ready: false, firstSnap: {}, gc: {}, gx: {}, sg: {}, loaded: false, got: {} };
+{ const dr = jget(DRAFT_KEY) || {}; if (dr.idea) Object.assign(S.draftIdea, dr.idea); if (dr.sugg) Object.assign(S.draftSugg, dr.sugg); if (typeof dr.q === 'string') S.draftQ = dr.q; }
+function persistDrafts() { try { const d = { idea: S.draftIdea, sugg: S.draftSugg, q: S.draftQ }; if ((d.idea.text || '').trim() || (d.sugg.text || '').trim() || (d.q || '').trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); else localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+let T = {}; const stDoneNow = id => S.stBusy[id] ? S.stBusy[id].was : !!((T.stationsDone || {})[id]);
 let HOST = null, DB = null, LOCAL = false, RO = false, FILLER = true, CANSUG = true, ROOM = null, PEERS = [], ME = { id: null, name: '' }, USER = null, DL = null;
 const NAMES = {};
 const Q = {};   // כתיבות ממתינות
 const meta = () => D.meta.session || {};
+/* העורכ.ת הנוכחי.ת. בזמן שהעברת עריכה אלינו עוד לא אושרה בשרת, עדיין נחשב.ת הקודם.ת. */
+const driverId = () => { const d = meta().driverUid; return S.drvPending && d === ME.id ? S.lastDriver : d; };
 const canWrite = col => !RO || OPEN.has(col);
 const byOrd = (a, b) => (a.ord || 0) - (b.ord || 0) || (a.id < b.id ? -1 : 1);
 const list = col => Object.entries(D[col] || {}).map(([id, d]) => ({ id, ...d })).sort(byOrd);
@@ -595,9 +646,32 @@ const LV = path => V('live', 'session', path);
 const nameOf = id => id === ME.id ? (ME.name || 'אני') : (NAMES[id] || 'משתתף/ת');
 function toast(msg) { const t = $('#toast'); $('span', t).textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600); }
 
-/* ---------- כתיבה: אחת בכל פעם למסמך, מקובצת ---------- */
+/* ---------- כתיבה: אחת בכל פעם למסמך, מקובצת ----------
+   ״נשמר״ ו״נוסף״ מוצגים רק אחרי שהשרת אישר את הכתיבה (ההבטחה של set נפתרת באישור). בכשל: הטקסט נשאר, יש הודעה קבועה עם ״נסה שוב״,
+   וכל מה שטרם אושר נשמר גם במכשיר (PEND_KEY, DRAFT_KEY) ומשוחזר בכניסה הבאה. */
+const SAVE = { busy: 0, err: null, last: 0, since: 0 };
+const ADDQ = {};    // הוספות שנשלחו וטרם אושרו: key -> rec
+const RETRY = {};   // פעולות שנכשלו וממתינות ל״נסה שוב״: key -> { fn, label, rec? }
 async function writeDoc(col, id, p) {
   await DB.collection(col).doc(id).set(JSON.parse(JSON.stringify(p)), { merge: true });
+}
+let lastPendStr = null;
+function persistPending() {
+  if (!S.restored) return;
+  const pend = { q: [], adds: [] };
+  Object.keys(Q).forEach(k => { const q = Q[k], m = {}; if (q.inflight) deepAssign(m, q.inflight); deepAssign(m, q.patch); if (Object.keys(m).length) pend.q.push({ col: q.col, id: q.id, patch: m }); });
+  [...Object.values(ADDQ), ...Object.values(RETRY).map(r => r.rec).filter(Boolean)].forEach(r => pend.adds.push(r));
+  const str = pend.q.length || pend.adds.length ? JSON.stringify(pend) : '';
+  if (str === lastPendStr) return; lastPendStr = str;
+  try { if (str) localStorage.setItem(PEND_KEY, str); else localStorage.removeItem(PEND_KEY); } catch (e) {}
+}
+function restorePending() {
+  S.restored = true;
+  const p = jget(PEND_KEY); if (!p) return;
+  let n = 0;
+  (p.q || []).forEach(x => { if (x && canWrite(x.col)) { patch(x.col, x.id, x.patch, 0); n++; } });
+  (p.adds || []).forEach(r => { if (r && canWrite(r.col) && !(D[r.col] || {})[r.id]) { commitAdd(r); n++; } });
+  if (n) toast('שוחזרו שינויים שלא הספקנו לשמור, ומנסים לשמור אותם עכשיו');
 }
 function patch(col, id, obj, delay = 500) {
   if (!canWrite(col)) return;
@@ -616,7 +690,7 @@ async function flush(k) {
   catch (e) {
     const c = e && e.code;
     if (c === 'permission-denied' || c === 'resource-exhausted') writeError(e, q.col);
-    else {   // כשל זמני (רשת): מחזירים את הכתיבה לתור ומנסים שוב, בלי לאבד את מה שהוקלד
+    else {   // כשל זמני (רשת): מחזירים את הכתיבה לתור ומנסים שוב, בלי לאבד את מה שהוקלד. ההודעה הקבועה נשארת עד שהשמירה מצליחה.
       const m = clone(q.inflight); deepAssign(m, q.patch); q.patch = m; SAVE.err = c || 'error';
       q.inflight = null; q.busy = false; clearTimeout(q.timer); q.timer = setTimeout(() => flush(k), 4000); saveUI(); return;
     }
@@ -631,42 +705,69 @@ function writeError(e, col) {
   else if (c === 'permission-denied') { if (OPEN.has(col)) { CANSUG = false; toast('אין לכם הרשאה לשלוח הצעות'); } else { RO = true; FILLER = false; toast('אין לכם הרשאת כתיבה למסמך. אפשר לצפות ולשלוח הצעות'); } scheduleRender(); }
   else toast('הכתיבה נכשלה. בדקו את החיבור ונסו שוב');
 }
-async function add(col, data, focusKey) {
+const labelOf = rec => String((rec.data && (rec.data.text || rec.data.name || rec.data.category || rec.data.desc)) || '').slice(0, 30);
+/* מחזיר את מזהה המסמך רק אחרי אישור מהשרת; null בכשל. onFail (אופציונלי): מי שמחזיק את הטיוטה בתיבה מטפל בכשל בעצמו. */
+async function add(col, data, focusKey, onFail) {
   if (!canWrite(col)) return null;
   const ref = DB.collection(col).doc();
   if (focusKey) S.focus = focusKey.replace('{id}', ref.id);
-  SAVE.busy++; saveUI();
-  try { await ref.set({ ...data, by: ME.id, ord: Date.now() }); SAVE.last = Date.now(); } catch (e) { writeError(e, col); }
-  SAVE.busy--; saveUI();
-  return ref.id;
+  return commitAdd({ col, id: ref.id, data: { ...data, by: ME.id, ord: Date.now() } }, onFail);
+}
+async function commitAdd(rec, onFail) {
+  const key = rec.col + '/' + rec.id; ADDQ[key] = rec; SAVE.busy++; saveUI();
+  try {
+    await DB.collection(rec.col).doc(rec.id).set(JSON.parse(JSON.stringify(rec.data)));
+    SAVE.last = Date.now(); SAVE.err = null; delete RETRY[key];
+    return rec.id;
+  } catch (e) {
+    const c = e && e.code;
+    if (c === 'permission-denied' || c === 'resource-exhausted') { delete RETRY[key]; writeError(e, rec.col); }
+    else if (onFail) onFail(e);
+    else RETRY[key] = { rec, label: labelOf(rec), fn: () => commitAdd(rec) };
+    return null;
+  } finally { delete ADDQ[key]; SAVE.busy--; saveUI(); }
 }
 async function removeDoc(col, id) {
-  if (!canWrite(col)) return; delete Q[col + '/' + id]; SAVE.busy++; saveUI();
-  try { await DB.collection(col).doc(id).delete(); SAVE.last = Date.now(); } catch (e) { writeError(e, col); }
-  SAVE.busy--; saveUI();
+  if (!canWrite(col)) return; const k = 'rm:' + col + '/' + id; delete Q[col + '/' + id]; SAVE.busy++; saveUI();
+  try { await DB.collection(col).doc(id).delete(); SAVE.last = Date.now(); delete RETRY[k]; }
+  catch (e) { const c = e && e.code; if (c === 'permission-denied' || c === 'resource-exhausted') writeError(e, col); else RETRY[k] = { label: 'מחיקה', fn: () => removeDoc(col, id) }; }
+  finally { SAVE.busy--; saveUI(); }
 }
 
-/* ---------- חיווי שמירה, שמירה בעת יציאה ושחזור אחרי ניתוק ---------- */
-const SAVE = { busy: 0, err: null, last: 0 };
+/* ---------- חיווי שמירה, הודעה קבועה בכשל, שמירה בעת יציאה ושחזור אחרי ניתוק ---------- */
 const pendingCount = () => Object.keys(Q).length + SAVE.busy;
+const failedCount = () => Object.keys(RETRY).length;
+function bannerHTML() {
+  const off = !navigator.onLine, bad = failedCount() || SAVE.err, slow = pendingCount() && SAVE.since && Date.now() - SAVE.since > 8000;
+  if (!off && !bad && !slow) return '';
+  const items = Object.values(RETRY).map(r => r.label).filter(Boolean).slice(0, 3);
+  const msg = off ? 'אין חיבור לאינטרנט. מה שכתבתם נשמר כטיוטה במכשיר, וייכתב לשרת כשהחיבור יחזור.' : (bad ? 'השינויים האחרונים עוד לא נשמרו בשרת. מה שכתבתם נשמר כטיוטה במכשיר ולא יאבד.' : 'השמירה מתעכבת. מה שכתבתם נשמר כטיוטה במכשיר.');
+  return `<div class="notice purple savebar" role="alert"><b>${msg}</b>${items.length ? `<span class="hint">${items.map(esc).join(' · ')}</span>` : ''}<button class="btn" data-act="retrySave">נסה שוב</button></div>`;
+}
 function saveUI() {
+  persistPending();
+  const n = pendingCount(); if (n && !SAVE.since) SAVE.since = Date.now(); if (!n) SAVE.since = 0;
+  const bn = $('#saveBanner'); if (bn) { const h = bannerHTML(); if (bn.dataset.h !== h) { bn.dataset.h = h; bn.innerHTML = h; } }
   const el = $('#saveInd'); if (!el) return;
   let cls = 'ok', txt;
-  if (!navigator.onLine) { cls = 'off'; txt = 'אין חיבור · נשמור כשיחזור'; }
-  else if (SAVE.err) { cls = 'err'; txt = 'לא נשמר עדיין · מנסים שוב'; }
-  else if (pendingCount()) { cls = 'ing'; txt = 'שומר…'; }
+  if (!navigator.onLine) { cls = 'off'; txt = 'אין חיבור · לא נשמר'; }
+  else if (SAVE.err || failedCount()) { cls = 'err'; txt = 'לא נשמר · נסו שוב'; }
+  else if (n && SAVE.since && Date.now() - SAVE.since > 8000) { cls = 'err'; txt = 'השמירה מתעכבת'; }
+  else if (n) { cls = 'ing'; txt = 'שומר…'; }
   else if (SAVE.last) txt = 'נשמר ' + new Date(SAVE.last).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  else txt = RO && !LOCAL ? 'מצב צפייה' : 'נשמר אוטומטית';
+  else { cls = 'idle'; txt = RO && !LOCAL ? 'מצב צפייה' : 'אין שינויים חדשים'; }
   if (el.className !== 'save ' + cls) el.className = 'save ' + cls;
   if (el.textContent !== txt) el.textContent = txt;
 }
+setInterval(saveUI, 1000);
 function flushAll() { Object.keys(Q).forEach(k => { const q = Q[k]; if (q) { clearTimeout(q.timer); flush(k); } }); }
+async function retryAll() { SAVE.err = null; flushAll(); for (const k of Object.keys(RETRY)) { const r = RETRY[k]; if (r) await r.fn(); } saveUI(); }
 async function waitSaved(ms = 4000) { flushAll(); const t0 = Date.now(); while (pendingCount() && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 100)); }
-addEventListener('online', () => { SAVE.err = null; flushAll(); saveUI(); });
+addEventListener('online', () => { retryAll(); });
 addEventListener('offline', saveUI);
-addEventListener('pagehide', flushAll);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushAll(); });
-addEventListener('beforeunload', ev => { if (pendingCount()) { flushAll(); ev.preventDefault(); ev.returnValue = ''; } });
+addEventListener('pagehide', () => { flushAll(); persistPending(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flushAll(); persistPending(); } });
+addEventListener('beforeunload', ev => { if (pendingCount() || failedCount()) { flushAll(); persistPending(); ev.preventDefault(); ev.returnValue = ''; } });
 
 /* ---------- טיימר משותף ---------- */
 function tLeft() { const t = LV('timer') || {}; if (t.running) return Math.max(0, Math.round((t.endsAt - Date.now()) / 1000)); return t.left != null ? t.left : (t.total || 600); }
@@ -731,11 +832,6 @@ function done(id) {
 const votesOf = id => Object.keys(D.votes).filter(k => D.votes[k].idea === id && V('votes', k, 'v')).length;
 const iVoted = id => !!V('votes', id + '_' + ME.id, 'v');
 const openCount = stepId => list('sugg').filter(x => x.step === stepId && (V('sugg', x.id, 'status') || 'open') === 'open').length;
-function helperNotice() {
-  const d = meta().driverUid, gs = M('groupStep');
-  return `<div class="notice deep"><b>${HOST.isRoster ? 'אתם מסייעים' : 'אתם צופים'}</b><span>${d ? esc(nameOf(d)) : 'הממלא.ת'} ממלא.ת את המסמך, ואתם רואים אותו בזמן אמת. ${CANSUG ? 'אפשר לשלוח הצעות דרך ״הצעה לצוות״ בתחתית המסך.' : ''}</span>
-    ${HOST.isRoster ? '<button class="btn" data-act="takeDriver">אני לוקח.ת את המקלדת</button>' : ''}${S.follow ? '<span class="pill l">עוקבים אחרי הממלא.ת</span>' : (gs != null ? `<button class="btn" data-act="followOn">חזרה לשלב של הממלא.ת · ${esc(STEPS[gs].label)}</button>` : '')}</div>`;
-}
 function peersHTML() {
   const seen = new Map(); PEERS.filter(p => p.kind === 'viewer').forEach(p => { const id = p.by || p.peer; if (!seen.has(id)) seen.set(id, p); });
   if (!seen.size) return '';
@@ -771,6 +867,18 @@ function suggHTML(st) {
     <div class="stack" style="margin-top:14px;gap:12px">${open.length ? open.map(suggCard).join('') : '<div class="empty"><b>אין הצעות פתוחות</b>הצעות חדשות יופיעו כאן בזמן אמת.</div>'}
       ${handled.length ? `<details class="guide" ${S.gx[st.id] ? 'open' : ''}><summary>הצעות שטופלו או נדחו (${handled.length})</summary><div class="stack" style="margin-top:12px;gap:12px">${handled.map(suggCard).join('')}</div></details>` : ''}</div></section>`;
 }
+async function sendSugg(text, stepId, section) {
+  if (S.busySugg) return; S.busySugg = true;
+  const id = await add('sugg', { step: stepId, section, text, status: 'open' }, null, () => { RETRY['draft:sugg'] = { label: 'הצעה: ' + text.slice(0, 30), fn: () => sendSugg(text, stepId, section) }; saveUI(); });
+  S.busySugg = false;
+  if (id) { delete RETRY['draft:sugg']; if ((S.draftSugg.text || '').trim() === text) S.draftSugg.text = ''; persistDrafts(); S.focus = 'sugg'; render(); toast('ההצעה נשלחה לממלא.ת'); }
+}
+async function sendIdea(text, target, assum) {
+  if (S.busyIdea) return; S.busyIdea = true;
+  const id = await add('ideas', { text, target, assum, effort: 1, impact: 1, star: false }, null, () => { RETRY['draft:idea'] = { label: 'רעיון: ' + text.slice(0, 30), fn: () => sendIdea(text, target, assum) }; saveUI(); });
+  S.busyIdea = false;
+  if (id) { delete RETRY['draft:idea']; if ((S.draftIdea.text || '').trim() === text) S.draftIdea = { text: '', target: S.draftIdea.target, assum: '' }; persistDrafts(); render(); toast('הרעיון נוסף'); }
+}
 async function adoptSugg(id, only) {
   const x = D.sugg[id]; if (!x || !FILLER) return;
   const text = (V('sugg', id, 'text') || '').trim(), sec = x.section;
@@ -793,11 +901,26 @@ async function adoptSugg(id, only) {
   patch('sugg', id, { status: 'taken', handledBy: ME.id }, 0);
   toast(only || !ADOPT[sec] ? 'ההצעה סומנה כטופלה' : 'ההצעה נוספה למסמך');
 }
+async function claimDriver(silent) {
+  if (S.drvPending || !HOST) return;
+  S.drvPending = true;
+  try {
+    await DB.collection('meta').doc('session').set({ driverUid: ME.id, groupStep: S.step }, { merge: true });
+    S.drvPending = false; S.lastDriver = ME.id; SAVE.last = Date.now(); delete RETRY.drv;
+    onMeta(); scheduleRender();
+    if (!silent) toast('עכשיו אתם עורכים בשם הצוות');
+  } catch (e) {
+    S.drvPending = false; onMeta(); scheduleRender();
+    if (e && e.code === 'permission-denied') writeError(e, 'meta'); else { RETRY.drv = { label: 'מעבר לעריכה', fn: () => claimDriver(silent) }; saveUI(); }
+  }
+}
 function onMeta() {
   if (!LOCAL) {
-    const d = meta().driverUid;
-    if (!d && S.got.meta && HOST.isRoster && !S.drvSet) { S.drvSet = true; DB.collection('meta').doc('session').set({ driverUid: ME.id }, { merge: true }).catch(e => writeError(e, 'meta')); }
+    const d = driverId(), was = FILLER;
+    if (!d && S.got.meta && HOST.isRoster && !S.drvSet) { S.drvSet = true; claimDriver(true); }
     FILLER = d ? (d === ME.id && HOST.isRoster) : HOST.isRoster; RO = !FILLER;
+    if (S.loaded && was && !FILLER && d && d !== ME.id) toast('עכשיו ' + nameOf(d) + ' עורכ.ת בשם הצוות');
+    if (d) S.lastDriver = d;
   }
   if (FILLER && !LOCAL && !RO && S.got.meta) {
     if (!S.stepSync) { S.stepSync = true; patch('meta', 'session', { groupStep: S.step }, 0); }
@@ -810,11 +933,11 @@ function onMeta() {
 let lastReport = '';
 function reportProgress() {
   if (!HOST || !FILLER || !S.loaded) return;
-  const progress = {}; STEPS.forEach(s => { progress[s.id] = !!done(s.id); });
+  const progress = {}; STEPS.filter(s => !s.main).forEach(s => { progress[s.id] = !!done(s.id); });
   progress.pilot = list('ideas').some(i => V('ideas', i.id, 'star'));
   progress.plan = ['toc', 'budget', 'partners'].every(done);
   const c = M('def.cause'), p = M('def.phen'), k = M('def.cons');
-  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', ideasCount: list('ideas').length, budgetTotal: budgetTotal(), pitchTitle: (PV('title') || '').trim(), pitchTagline: (PV('tagline') || '').trim(), pitchHook: (PV('hook') || '').trim(), updatedAt: Date.now() };
+  const rep = { progress, question: M('question') || '', definition: c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : '', problem: (M('problem') || '').trim(), chosenIdea: (starIdeas()[0] ? (V('ideas', starIdeas()[0].id, 'text') || '') : '').trim(), expWhat: (M('exp.what') || '').trim(), ideasCount: list('ideas').length, budgetTotal: budgetTotal(), pitchTitle: (PV('title') || '').trim(), pitchTagline: (PV('tagline') || '').trim(), pitchHook: (PV('hook') || '').trim(), updatedAt: Date.now() };
   const key = JSON.stringify({ ...rep, updatedAt: 0 }); if (key === lastReport) return; lastReport = key;
   HOST.report(rep).catch(() => {});
 }
@@ -823,15 +946,16 @@ function reportProgress() {
 let rt = null, pointerDown = false;
 function scheduleRender() { clearTimeout(rt); rt = setTimeout(() => { if (pointerDown) { scheduleRender(); return; } render(); }, 40); }
 function render() {
-  if (!S.ready || !S.loaded) return;
+  if (!S.ready) return;
+  if (!S.loaded) { renderLoading(); return; }
+  if (!S.restored) restorePending();
   const root = $('#app');
   const ae = document.activeElement; let keep = null;
   if (ae && ae.matches && ae.matches('[data-fk],[data-addin]') && root.contains(ae)) keep = { fk: ae.dataset.fk, add: ae.dataset.addin, v: ae.value, s: ae.selectionStart, e: ae.selectionEnd };
   const sy = scrollY;
   const oldNav = $('.side nav') ? $('.side nav').scrollLeft : null, oldStep = render._step; render._step = S.step;
   const st = STEPS[S.step];
-  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, pitch: pitchHTML, board: boardHTML }[st.id]();
-  const prev = STEPS[S.step - 1], next = STEPS[S.step + 1];
+  const body = { setup: setupHTML, phen: phenHTML, tree: treeStepHTML, insights: insightsHTML, path: pathHTML, def: defHTML, ideas: ideasHTML, toc: tocHTML, budget: budgetHTML, partners: partnersHTML, pitch: pitchHTML, board: boardHTML, sProblem: problemMainHTML, sIdea: ideaMainHTML, sPilot: pilotMainHTML, sLearn: learnMainHTML }[st.id]();
   const stn = stationOf(st.id), sIdx = STATIONS.indexOf(stn);
   const sgHTML = suggHTML(st), ntHTML = st.id === 'board' ? '' : notesHTML(st), oc = openCount(st.id);
   const panel = sgHTML || ntHTML ? `<details class="fr side2" ${S.sg[st.id] ? 'open' : ''}><summary><b>${FILLER && !LOCAL ? 'הצעות מהצוות והערות' : (LOCAL ? 'הערות' : 'הצעה לצוות והערות')}</b>${FILLER && !LOCAL && oc ? `<span class="pin cnt">${oc} פתוחות</span>` : ''}</summary>${sgHTML}${ntHTML}</details>` : '';
@@ -842,18 +966,17 @@ function render() {
     <div class="wbar">
       <header class="fr wtop"><button class="btn sm" data-act="back" aria-label="חזרה ללוח היוזמה">${ar('blue', 'rv')}<span>ללוח</span></button>
         <div class="wt grow"><b>${esc(HOST.teamName || 'צוות')}</b><small>${esc(M('question') || 'עוד אין שאלה מובילה')}</small></div>
-        ${tmRun}${roleBadge()}<span id="saveInd" class="save" role="status" aria-live="polite"></span>
+        ${tmRun}<span id="saveInd" class="save" role="status" aria-live="polite"></span>
         <details class="tmenu"><summary class="btn sm" aria-label="צוות וטיימר">${ic('group', 'blue', 20)}<span>צוות</span></summary><div class="tpop">${teamPanel()}</div></details>
         <button class="btn sm ${st.id === 'board' ? 'pri' : ''}" data-act="openExport" aria-label="תיק הפרויקט">${ic('doc', st.id === 'board' ? 'white' : 'blue', 20)}<span>תיק</span></button>
       </header>
-      <nav class="fr stations" aria-label="ארבע תחנות">${STATIONS.map((x, i) => { const n = x.steps.filter(done).length, full = n === x.steps.length;
-        return `<button class="stn ${i === sIdx ? 'cur' : ''} ${full ? 'done' : ''}" data-act="goStation" data-i="${i}" ${i === sIdx ? 'aria-current="step"' : ''}><span class="badge">${full ? ic('check', i === sIdx ? 'blue' : 'white', 18) : i + 1}</span><span class="nm">${x.label}</span><small>${n}/${x.steps.length}</small></button>`; }).join('')}</nav>
+      ${editBar()}
+      <div id="saveBanner"></div>
+      ${stationBar(stn)}
     </div>
-    ${stn.steps.length > 1 ? `<div class="fr tools" role="group" aria-label="כלים בתחנה ${stn.label}">${stn.steps.map(id => `<button class="tl ${id === st.id ? 'cur' : ''} ${done(id) ? 'done' : ''}" data-act="go" data-i="${stepIdx(id)}">${done(id) ? '✓ ' : ''}${SHORT[id]}${FILLER && !LOCAL && openCount(id) ? `<span class="dot2" aria-label="יש הצעות פתוחות"></span>` : ''}</button>`).join('')}</div>` : ''}
-    ${!FILLER && !LOCAL ? helperNotice() : ''}
+    ${toolsRowHTML(st, stn)}
     <main class="stack wmain" id="wmain">${welcome}${body}${panel}</main>
-    <footer class="fr wfoot">${prev ? `<button class="btn" data-act="go" data-i="${S.step - 1}">${ar('blue', 'rv')} <span>${stationOf(prev.id) !== stn ? 'לתחנה הקודמת · ' : ''}${SHORT[prev.id]}</span></button>` : '<span></span>'}
-      ${next ? `<button class="btn pri" data-act="go" data-i="${S.step + 1}"><span>${stationOf(next.id) !== stn ? `לתחנה הבאה · ${stationOf(next.id).label} · ` : ''}${SHORT[next.id]}</span> ${ar('white')}</button>` : '<button class="btn pri" data-act="back">סיום · חזרה ללוח</button>'}</footer>`;
+    ${footerHTML(st, stn)}`;
   root.classList.toggle('ro', RO);
   if (RO) $$('textarea,input,select', root).forEach(el => { if (el.dataset.addin === 'sugg' || el.dataset.open) return; el.readOnly = true; if (el.tagName === 'SELECT') el.disabled = true; });
   $$('textarea', root).forEach(autosize);
@@ -877,7 +1000,7 @@ function roleBadge() {
   return `<span class="role v" title="צפייה בעבודת הצוות">${CANSUG ? 'צפייה · אפשר להציע' : 'צפייה בלבד'}</span>`;
 }
 function teamPanel() {
-  const d = meta().driverUid;
+  const d = driverId();
   return `<div class="stack" style="gap:10px"><div class="hint" style="font-weight:700">הצוות עכשיו</div>
     <div class="chips"><span class="chip">${ic('pencil', 'blue', 18)} ממלא.ת · <b>${d ? esc(nameOf(d)) + (d === ME.id ? ' · אתם' : '') : 'עדיין אין'}</b></span>
       <span class="chip">אחראי.ת זמנים · <b>${LV('timeUid') ? esc(nameOf(LV('timeUid'))) : 'פנוי'}</b></span>${peersHTML()}</div>
@@ -919,7 +1042,7 @@ function how(quick, more = [], ex = '') {
     ${more.length ? `<ul class="hl">${more.map(m => `<li>${m}</li>`).join('')}</ul>` : ''}${ex ? `<div class="ex">${ex}</div>` : ''}</details>`;
 }
 function notesHTML(s) {
-  return `<section class="fr"><label class="l" for="${fid('notes', s.id, 'text')}">הערות לשלב הזה${meta().driverUid ? ' · ' + esc(nameOf(meta().driverUid)) : ''}</label>
+  return `<section class="fr"><label class="l" for="${fid('notes', s.id, 'text')}">הערות לשלב הזה${driverId() ? ' · ' + esc(nameOf(driverId())) : ''}</label>
     ${ta('notes', s.id, 'text', 'מתעדים כל מה שעולה בקבוצה')}</section>`;
 }
 
@@ -931,7 +1054,7 @@ function roleCard(key, icon, title, desc) {
     <div class="h row">${mine ? `<button class="btn sm" data-act="role" data-k="${key}" data-v="free">שחרור התפקיד</button>` : `<button class="btn pri sm" data-act="role" data-k="${key}" data-v="take">${uid ? 'העברה אליי' : 'אני לוקח.ת את התפקיד'}</button>`}</div></div>`;
 }
 function driverCard() {
-  const d = meta().driverUid;
+  const d = driverId();
   return `<div class="card"><div class="row" style="margin-bottom:8px">${ic('pencil', 'blue', 30)}<h3 class="s">ממלא.ת ומסייעים</h3></div>
     <p style="margin-bottom:12px">אדם אחד ממלא, והצוות מסייע: צופה בזמן אמת, שולח הצעות ומצביע על רעיונות.</p>
     ${d ? `<div class="row" style="margin-bottom:12px"><span class="pill">${esc(nameOf(d))}${d === ME.id ? ' · אתם' : ''}</span><span class="hint">ממלא.ת</span></div>` : '<div class="hint" style="margin-bottom:12px">הממלא.ת יופיע כאן כשיפתח את המסמך</div>'}
@@ -1113,6 +1236,114 @@ function ideasHTML() {
   }).join('')}</div>` : `<section class="fr">${emptyBox('עוד אין רעיונות', 'התחילו משאלת ״איך נוכל…״ וכתבו את הרעיון הראשון.')}</section>`}`;
 }
 
+/* ---------- ארבעת המסכים הראשיים: תוצר אחד לכל תחנה. הכלים הקיימים נפתחים תחת ״העמקה״ ---------- */
+const defPlain = () => { const c = M('def.cause'), p = M('def.phen'), k = M('def.cons'); return c && p && k ? `בגלל ש${c} + קורה ש${p} + לכן ההשלכה היא ${k}` : ''; };
+const EXP = [['exp.what', 'מה ננסה', 'הפעולה הקטנה והקונקרטית שנעשה בבית הספר'], ['exp.who', 'עם מי ומתי', 'כיתה, קבוצה או אנשי צוות, ותאריך או טווח זמנים'], ['exp.owner', 'מי אחראי', 'שם אחד שדואג שזה יקרה'], ['exp.expect', 'מה נצפה לראות כדי להחליט אם להמשיך', 'סימן אחד או שניים שנוכל לבדוק אחרי הניסוי']];
+const LEARN = [['learn.happened', 'מה קרה בפועל?', 'מה באמת קרה בניסוי, גם אם זה שונה ממה שתכננו'], ['learn.surprise', 'מה הפתיע אותנו?', 'מה לא ציפינו לו, לטובה או לרעה'], ['learn.change', 'מה נשנה בסיבוב הבא?', 'שינוי אחד או שניים שנעשה בפעם הבאה']];
+function mainHead(stn, title, q) {
+  const i = STATIONS.indexOf(stn), st = STEPS[stepIdx(stn.main)];
+  return `<section class="fr task"><div class="sh"><div class="num">${ic(st.icon, 'white', 34)}</div><div class="grow"><div class="eyebrow">תחנה ${i + 1} · ${stn.label}</div><h2 class="t">${title}</h2><p>${q}</p></div></div></section>`;
+}
+function deepenHTML(stn) {
+  return `<details class="deepen" data-d="${stn.id}" ${S.dp[stn.id] ? 'open' : ''}><summary><b>${DEEP[stn.id]}</b><span class="hint">${stn.steps.map(id => SHORT[id]).join(' · ')}</span></summary>
+    <div class="row" style="margin-top:12px">${stn.steps.map(id => `<button class="btn" data-act="go" data-i="${stepIdx(id)}">${SHORT[id]}</button>`).join('')}</div></details>`;
+}
+function problemMainHTML() {
+  const stn = STATIONS[0], dp = defPlain(), has = (M('problem') || '').trim();
+  return mainHead(stn, 'הבעיה שלנו', 'מה קורה, למי ובאיזה מצב?') +
+  `<section class="fr"><label class="l" for="${fid('meta', 'session', 'problem')}">משפט הבעיה</label>
+    ${ta('meta', 'session', 'problem', 'למשל: תלמידי כיתות ז׳ מגיעים לשיעור הראשון בלי ציוד, ולכן מפסידים את תחילת השיעור')}
+    <p class="hint" style="margin-top:8px">משפט אחד שאפשר לערוך בכל שלב: מה קורה, למי ובאיזה מצב.</p>
+    ${dp && !has ? `<div class="row w" style="margin-top:12px"><button class="btn sm" data-act="fillProblem">מילוי מהגדרת הבעיה</button><span class="hint">${esc(dp)}</span></div>` : ''}</section>` + deepenHTML(stn);
+}
+function ideaMainHTML() {
+  const stn = STATIONS[1], ideas = list('ideas'), chosen = ideas.filter(x => V('ideas', x.id, 'star')), rest = ideas.filter(x => !V('ideas', x.id, 'star'));
+  return mainHead(stn, 'הרעיון שלנו', 'מה היינו רוצים לנסות? בוחרים רעיון אחד להתנסות.') +
+  `<section class="fr chosen"><h3 class="s">הרעיון שנבחר</h3>${chosen.length ? `<div class="stack" style="margin-top:12px;gap:10px">${chosen.map(x => `<div class="idea star"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div class="grow">${ta('ideas', x.id, 'text', 'הרעיון')}</div><button class="btn sm lt w" data-act="star" data-id="${x.id}">ביטול בחירה</button></div></div>`).join('')}</div>` : '<p class="hint" style="margin-top:8px">עוד לא נבחר רעיון. מוסיפים רעיונות למטה, ולוחצים ״ננסה את זה״ על הרעיון שמתאים לניסוי.</p>'}</section>
+  <section class="fr"><h3 class="s">הרעיונות שלנו (${ideas.length})</h3>
+    <div class="addrow w" style="margin-top:12px"><input class="in" type="text" data-addin="ideaq" value="${esc(S.draftQ)}" placeholder="רעיון קצר: מה היינו עושים?"><button class="btn pri" data-act="addIdeaQ">הוספת רעיון</button></div>
+    ${rest.length ? `<div class="igrid" style="margin-top:14px">${rest.map(x => `<div class="idea"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div class="grow">${ta('ideas', x.id, 'text', 'הרעיון')}${by(x)}</div><button class="rm w" data-act="rm" data-col="ideas" data-id="${x.id}" aria-label="מחיקה"></button></div>
+      <div class="row" style="margin-top:auto"><button class="btn pri sm w" data-act="star" data-id="${x.id}">ננסה את זה</button>${votesOf(x.id) ? `<span class="pill l">${votesOf(x.id)} קולות</span>` : ''}</div></div>`).join('')}</div>` : (ideas.length ? '' : `<div style="margin-top:14px">${emptyBox('עוד אין רעיונות', 'כתבו את הרעיון הראשון בשורה שלמעלה.')}</div>`)}</section>` + deepenHTML(stn);
+}
+function pilotMainHTML() {
+  const stn = STATIONS[2], ch = starIdeas(), empty = !(M('exp.what') || '').trim();
+  return mainHead(stn, 'ניסוי בבית ספר', 'מה ננסה בפועל, ואיך נדע אם כדאי להמשיך?') +
+  `<section class="fr expcard"><h3 class="s">כרטיס ניסוי</h3>
+    ${ch.length ? `<p class="hint" style="margin-top:6px">הרעיון שנבחר: <b>${ch.map(x => esc(V('ideas', x.id, 'text') || '')).join(' · ')}</b></p>` : '<p class="hint" style="margin-top:6px">עוד לא נבחר רעיון. אפשר לבחור בתחנת ״רעיון״.</p>'}
+    ${EXP.map(([f, l, ph]) => `<label class="l" style="margin-top:14px" for="${fid('meta', 'session', f)}">${l}</label>${ta('meta', 'session', f, ph)}`).join('')}
+    ${ch.length && empty ? `<div class="row w" style="margin-top:12px"><button class="btn sm" data-act="fillExp">מילוי ״מה ננסה״ מהרעיון שנבחר</button></div>` : ''}
+    <p class="hint" style="margin-top:14px">אחרי שההתנסות התקיימה בפועל, מסמנים את תחנת ״התנסות״ בסרגל שבראש המסך.</p></section>` + deepenHTML(stn);
+}
+function learnMainHTML() {
+  const stn = STATIONS[3];
+  return mainHead(stn, 'מה למדנו', 'שלוש שאלות אחרי ההתנסות. התשובות נכנסות לתיק הפרויקט.') +
+  `<section class="fr">${LEARN.map(([f, l, ph], i) => `<label class="l" ${i ? 'style="margin-top:14px"' : ''} for="${fid('meta', 'session', f)}">${l}</label>${ta('meta', 'session', f, ph)}`).join('')}</section>` + deepenHTML(stn);
+}
+
+/* ---------- סרגל ארבע התחנות: שמות וסימון בלבד. פתיחת תחנה וסימון השלמה הן שתי פעולות נפרדות ---------- */
+function stationBar(stn) {
+  return `<nav class="fr sbar" aria-label="ארבע תחנות">${STATIONS.map((x, i) => {
+    const d = stDoneNow(x.id), cur = x === stn, busy = !!S.stBusy[x.id];
+    return `<div class="sb4 ${cur ? 'cur' : ''} ${d ? 'done' : ''}"><button class="sbn" data-act="goStation" data-i="${i}" ${cur ? 'aria-current="step"' : ''}>${x.label}</button><button class="sbc w" role="checkbox" aria-checked="${d}" aria-label="${x.label}: סימון השלמה" data-act="toggleStation" data-id="${x.id}" ${busy ? 'disabled' : ''}><span aria-hidden="true">${d ? '✓' : ''}</span></button></div>`;
+  }).join('')}</nav>`;
+}
+function editBar() {
+  if (LOCAL) return '';
+  const d = driverId(), gs = M('groupStep');
+  const follow = !FILLER ? (S.follow ? '<span class="pill l">עוקבים אחרי העורכ.ת</span>' : (gs != null && STEPS[gs] ? `<button class="btn" data-act="followOn">חזרה לשלב של העורכ.ת · ${esc(STEPS[gs].label)}</button>` : '')) : '';
+  const sugg = CANSUG ? '<button class="btn" data-act="goSugg">שליחת הצעה</button>' : '';
+  if (FILLER) return '<div class="editbar ed-e" role="status"><b>אתם עורכים</b><span>ההקלדה נשמרת בשם הצוות, והצוות רואה הכול בזמן אמת.</span></div>';
+  if (HOST.isRoster) return `<div class="editbar ed-h" role="status"><b>${d ? esc(nameOf(d)) : 'מישהו מהצוות'} עורכ.ת בשם הצוות</b><span>אתם רואים הכול בזמן אמת.</span><button class="btn" data-act="takeDriver">מעבר לעריכה</button>${sugg}${follow}</div>`;
+  return `<div class="editbar ed-v" role="status"><b>מצב צפייה</b><span>${CANSUG ? 'אפשר לשלוח הצעות לצוות.' : 'אין הרשאה לשלוח הצעות.'}</span>${sugg}${follow}</div>`;
+}
+function toolsRowHTML(st, stn) {
+  if (st.main) return '';
+  return `<div class="fr tools" role="group" aria-label="כלים בתחנה ${stn.label}"><button class="tl back" data-act="go" data-i="${stepIdx(stn.main)}">${ar('blue', 'rv')} מסך התחנה</button>${stn.steps.map(id => `<button class="tl ${id === st.id ? 'cur' : ''}" data-act="go" data-i="${stepIdx(id)}" ${id === st.id ? 'aria-current="page"' : ''}>${SHORT[id]}${FILLER && !LOCAL && openCount(id) ? '<span class="dot2" aria-label="יש הצעות פתוחות"></span>' : ''}</button>`).join('')}</div>`;
+}
+function footerHTML(st, stn) {
+  const si = STATIONS.indexOf(stn), prevS = STATIONS[si - 1], nextS = STATIONS[si + 1], go = i => `data-act="go" data-i="${i}"`;
+  const fin = '<button class="btn pri" data-act="back">סיום · חזרה ללוח</button>';
+  let left = '<span></span>', right;
+  if (st.main) {
+    if (prevS) left = `<button class="btn" ${go(stepIdx(prevS.main))}>${ar('blue', 'rv')} <span>לתחנה הקודמת · ${prevS.label}</span></button>`;
+    right = nextS ? `<button class="btn pri" ${go(stepIdx(nextS.main))}><span>לתחנה הבאה · ${nextS.label}</span> ${ar('white')}</button>` : fin;
+  } else {
+    left = `<button class="btn" ${go(stepIdx(stn.main))}>${ar('blue', 'rv')} <span>למסך התחנה · ${stn.label}</span></button>`;
+    const nt = stn.steps[stn.steps.indexOf(st.id) + 1];
+    right = nt ? `<button class="btn pri" ${go(stepIdx(nt))}><span>${SHORT[nt]}</span> ${ar('white')}</button>` : (nextS ? `<button class="btn pri" ${go(stepIdx(nextS.main))}><span>לתחנה הבאה · ${nextS.label}</span> ${ar('white')}</button>` : fin);
+  }
+  return `<footer class="fr wfoot">${left}${right}</footer>`;
+}
+function renderLoading() {
+  const root = $('#app');
+  if (S.loadErr) {
+    const forb = S.loadErr && S.loadErr.code === 'permission-denied';
+    root.innerHTML = `<section class="fr state" role="alert"><h2 class="t">לא הצלחנו לטעון את נתוני הצוות</h2><p>${forb ? 'אין לכם הרשאה לקרוא את נתוני הצוות הזה. בקשו ממנהל.ת הקבוצה.' : 'ייתכן שיש תקלה בחיבור. לא מציגים פרויקט ריק, כדי שלא תיכתב עליו עבודה שגויה.'}</p><div class="row"><button class="btn pri" data-act="reload">נסה שוב</button><button class="btn" data-act="back">ללוח היוזמה</button></div></section>`;
+    return;
+  }
+  root.innerHTML = `<div class="fr loading" role="status" style="flex-direction:column;gap:12px"><div class="row" style="justify-content:center"><span class="spin"></span>טוענים את נתוני הצוות…</div>${S.slow ? '<p class="hint">הטעינה מתעכבת. בדקו את החיבור לאינטרנט.</p><button class="btn pri" data-act="reload">נסה שוב</button>' : ''}</div>`;
+}
+/* ארבעת התוצרים: מקור אחד לתיק, להדפסה, לטקסט ולמסמך */
+function outputsData() {
+  return { problem: (M('problem') || '').trim() || defPlain(), ideas: starIdeas().map(x => V('ideas', x.id, 'text') || ''), exp: EXP.map(([f, l]) => [l, (M(f) || '').trim()]), learn: LEARN.map(([f, l]) => [l, (M(f) || '').trim()]) };
+}
+function outputsHTML() {
+  const o = outputsData(), none = '<span class="hint">עוד לא נכתב</span>';
+  const dl = rows => rows.some(r => r[1]) ? `<dl class="kv">${rows.map(([l, v]) => `<dt>${esc(l)}</dt><dd>${v ? esc(v) : none}</dd>`).join('')}</dl>` : none;
+  const bodies = [o.problem ? `<p>${esc(o.problem)}</p>` : none, o.ideas.length ? `<ul class="plain">${o.ideas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : none, dl(o.exp), dl(o.learn)];
+  return `<section class="fr"><h3 class="s">ארבעת התוצרים</h3><div class="pstat">${STATIONS.map((x, i) => `<div class="card"><div class="row"><b class="grow">תחנה ${i + 1} · ${x.label}</b>${stDoneNow(x.id) ? '<span class="pill">✓ הושלמה</span>' : ''}<button class="btn sm lt" data-act="go" data-i="${stepIdx(x.main)}">${FILLER ? 'לעריכה' : 'לצפייה'}</button></div><div style="margin-top:10px">${bodies[i]}</div></div>`).join('')}</div></section>`;
+}
+function outputsReportHTML(e) {
+  const o = outputsData(), dl = rows => rows.map(([l, v]) => `<p><b>${e(l)}:</b> ${e(v || '—')}</p>`).join('');
+  return `<div class="blk flow"><h2>ארבעת התוצרים</h2><h3>1 · בעיה</h3><p>${e(o.problem || '—')}</p><h3>2 · רעיון שנבחר</h3>${o.ideas.length ? `<ul>${o.ideas.map(t => `<li>${e(t)}</li>`).join('')}</ul>` : '<p>—</p>'}<h3>3 · התנסות: כרטיס ניסוי</h3>${dl(o.exp)}<h3>4 · למידה</h3>${dl(o.learn)}</div>`;
+}
+function outputsText(L) {
+  const o = outputsData();
+  L.push('ארבעת התוצרים', '1. בעיה: ' + (o.problem || '—'), '2. רעיון שנבחר: ' + (o.ideas.join(' · ') || '—'), '3. התנסות: כרטיס ניסוי');
+  o.exp.forEach(([l, v]) => L.push('   ' + l + ': ' + (v || '—')));
+  L.push('4. למידה'); o.learn.forEach(([l, v]) => L.push('   ' + l + ': ' + (v || '—'))); L.push('');
+}
+
 /* ---------- שלב 3 · תכנון היוזמה: תיאוריית שינוי, תב״ר, גיוס שותפים ---------- */
 const TOC_COLS = [['inputs', 'תשומות', 'מה יש לנו'], ['actions', 'פעולות', 'מה נעשה'], ['outputs', 'תוצרים', 'מה ייצא מזה'], ['impact', 'השפעה', 'שינוי ארוך טווח']];
 const FUND_ST = ['טרם פנינו', 'בפנייה', 'אושר'];
@@ -1290,8 +1521,8 @@ function planReportHTML(e) {
 function boardHTML() {
   const ch = curPath(); const ids = ch ? [...chainTo(ch.causeNode), ...chainTo(ch.consNode)].map(n => n.id) : [];
   const as = list('assumptions'), stars = list('ideas').filter(i => V('ideas', i.id, 'star'));
-  return `<section class="fr"><div class="sh"><div class="num">${ic('board', 'white', 34)}</div><div class="grow"><div class="eyebrow">תחנה 4 · למידה</div><h2 class="t">תיק הפרויקט</h2><p>כל מה שהצוות בנה, במקום אחד ומתעדכן לבד: הבעיה, ההנחות, הרעיון, התכנון והפיצ׳. מוכן להצגה, להעתקה ולשמירה.</p>
-    <div class="row" style="margin-top:16px">${IN_ARTIFACT ? '' : '<button class="btn pri" data-act="printDoc">הדפסה</button>'}<button class="btn ${IN_ARTIFACT ? 'pri' : ''}" data-act="saveHtml">שמירה כמסמך להדפסה</button><button class="btn" data-act="saveDoc">שמירה כ־Word</button><button class="btn" data-act="saveText">שמירה כטקסט</button><button class="btn" data-act="copyText">העתקה כטקסט</button></div>
+  return `<section class="fr"><div class="sh"><div class="num">${ic('board', 'white', 34)}</div><div class="grow"><div class="eyebrow">תחנה 4 · למידה</div><h2 class="t">תיק הפרויקט</h2><p>ארבעת התוצרים של הצוות במקום אחד, ומתחתיהם הפירוט המלא. מתעדכן לבד.</p>
+    <div class="row" style="margin-top:16px"><details class="tmenu xmenu"><summary class="btn pri" aria-haspopup="true">ייצוא ושמירה</summary><div class="tpop"><div class="stack" style="gap:8px">${IN_ARTIFACT ? '' : '<button class="btn" data-act="printDoc">הדפסה</button>'}<button class="btn" data-act="saveHtml">שמירה כמסמך להדפסה</button><button class="btn" data-act="saveDoc">שמירה כ־Word</button><button class="btn" data-act="saveText">שמירה כטקסט</button><button class="btn" data-act="copyText">העתקה כטקסט</button></div></div></details></div>
     <p class="hint" style="margin-top:10px">${IN_ARTIFACT ? 'פותחים את המסמך שנשמר, בוחרים הדפסה ושומרים כ־PDF.' : 'בחלון ההדפסה אפשר לבחור שמירה כ־PDF.'}</p></div></div></section>
   ${portfolioStatus()}
   <section class="fr board"><div class="hint" style="font-weight:700">השאלה המובילה</div><div class="q">${esc(M('question') || 'עוד לא נכתבה שאלה מובילה')}</div>
@@ -1302,14 +1533,13 @@ function boardHTML() {
     <h3 class="s">רעיונות שסומנו לפיילוט</h3>${stars.length ? `<ul style="padding-inline-start:24px;display:flex;flex-direction:column;gap:8px">${stars.map(x => `<li>${esc(V('ideas', x.id, 'text') || '')} <span class="hint">· ${votesOf(x.id)} קולות</span></li>`).join('')}</ul>` : '<span class="hint">עוד לא סומנו רעיונות לפיילוט</span>'}</section>
   <section class="fr board">${planBoardHTML()}</section>${pitchBoardHTML() ? `<section class="fr board">${pitchBoardHTML()}</section>` : ''}`;
 }
-function portfolioStatus() {
-  return `<section class="fr"><h3 class="s">איפה אנחנו</h3><div class="pstat">${STATIONS.map((x, i) => `<div class="card"><b>תחנה ${i + 1} · ${x.label}</b><ul>${x.steps.filter(id => id !== 'board').map(id => `<li class="${done(id) ? 'ok' : ''}"><span>${done(id) ? '✓' : '○'} ${SHORT[id]}</span>${done(id) ? '' : `<button class="btn sm lt" data-act="go" data-i="${stepIdx(id)}">להשלמה</button>`}</li>`).join('') || '<li class="hint">—</li>'}</ul></div>`).join('')}</div></section>`;
-}
+function portfolioStatus() { return outputsHTML(); }
 function boardText() {
   const L = [], RATE = { s: 'חזק', m: 'בינוני', w: 'חלש' };
   const T = treeModel(), ch = curPath();
   L.push('מחנכי עיר מפצחים כאב בטן', '='.repeat(24), new Date().toLocaleDateString('he-IL'), '');
   L.push('השאלה המובילה', M('question') || '—', '');
+  outputsText(L);
   const needs = list('needs'), gaps = list('gaps'), ph = list('phens');
   L.push('1. ניסוח תופעה בלתי רצויה');
   L.push('צרכים:'); needs.forEach(n => L.push('  • ' + (V('needs', n.id, 'text') || ''))); if (!needs.length) L.push('  —');
@@ -1400,12 +1630,13 @@ function reportHTML(opts = {}) {
   const phs = list('phens'), ins = list('insights'), paths = list('paths').filter(pathOk), as = list('assumptions'), ideas = list('ideas');
   const ideasS = ideas.slice().sort((a, b) => votesOf(b.id) - votesOf(a.id));
   const notes = STEPS.filter(st => V('notes', st.id, 'text'));
-  const driver = meta().driverUid ? nameOf(meta().driverUid) : '';
+  const driver = driverId() ? nameOf(driverId()) : '';
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${opts.word ? '<meta name="ProgId" content="Word.Document">' : ''}<title>מחנכי עיר מפצחים כאב בטן</title>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet"><style>${REPORT_CSS}</style></head><body dir="rtl">
 ${opts.word ? '' : `<div class="bar"><span>מסמך מוכן להדפסה</span><button onclick="window.print()">הדפסה או שמירה כ־PDF</button></div>`}
 <div class="wrap"><table class="hd"><tr><td style="width:1%"><img src="${A_RAW.logo}" alt="חותם" height="40"></td><td class="ti">מחנכי עיר מפצחים כאב בטן</td><td class="dt">${e(dt)}${driver ? '<br>ממלא.ת: ' + e(driver) : ''}</td></tr></table>
 <div class="blk"><h3>השאלה המובילה</h3><div class="q">${e(M('question') || '—')}</div></div>
+${outputsReportHTML(e)}
 <div class="blk"><h2>1 · ניסוח תופעה בלתי רצויה</h2><h3>צרכים</h3>${ol(needs)}<h3>פערים בין הרצוי למצוי</h3>${ol(gaps)}<h3>תופעות</h3>${phs.length ? `<ol>${phs.map(p => `<li>${e(V('phens', p.id, 'text') || '')}${p.id === M('chosenPhen') ? ' <span class="tag2">נבחרה כגזע</span>' : ''}</li>`).join('')}</ol>` : '<p class="mut">לא נרשם</p>'}</div>
 <div class="blk"><h2>2 · עץ הבעיה${ch ? ' · הנתיב הקריטי מסומן' : ''}</h2>${treeTable(T, hl)}</div>
 <div class="blk flow"><h2>3 · תובנות והנחות</h2>${ins.length ? `<table class="g"><tr><th>תובנה</th><th>הנחת יסוד</th><th>סוג</th><th>החלטה</th><th>מקורות</th></tr>${ins.map(x => `<tr><td>${e(V('insights', x.id, 'text') || '')}</td><td>${e(V('insights', x.id, 'assumption') || '')}</td><td>${TYPES[V('insights', x.id, 'type') || 'hyp']}</td><td>${DECISIONS[V('insights', x.id, 'decision') || 'check']}</td><td>${e(Object.entries(V('insights', x.id, 'sources') || {}).filter(([, v]) => v).map(([k]) => k).join(' · '))}</td></tr>`).join('')}</table>` : '<p class="mut">לא נרשם</p>'}</div>
@@ -1433,9 +1664,26 @@ const ADDCOL = { needs: 'needs', gaps: 'gaps', phens: 'phens', insights: 'insigh
 const ACT = {
   async back() { await waitSaved(); HOST.back(); },
   welcomeOk() { lsSet(WELCOME_KEY, '1'); render(); },
-  goStation(e) {
-    const x = STATIONS[+e.i], cur = stationOf(STEPS[S.step].id); if (x === cur) return;
-    const k = x.steps.findIndex(id => !done(id)); ACT.go({ i: stepIdx(x.steps[k < 0 ? 0 : k]) });
+  goStation(e) { ACT.go({ i: stepIdx(STATIONS[+e.i].main) }); },
+  /* סימון השלמה ידני ומשותף. נשמר ברמת הפרויקט (team.stationsDone), ומוצג רק אחרי אישור השרת. */
+  async toggleStation(e) {
+    if (!FILLER || RO || S.stBusy[e.id]) return;
+    const val = !stDoneNow(e.id); S.stBusy[e.id] = { was: !val }; render();
+    const key = 'st:' + e.id;
+    try { await HOST.setStationDone(e.id, val); delete RETRY[key]; SAVE.last = Date.now(); delete S.stBusy[e.id]; render(); toast(val ? 'התחנה סומנה כהושלמה' : 'הסימון בוטל'); }
+    catch (er) { delete S.stBusy[e.id]; RETRY[key] = { label: 'סימון תחנה ' + (STATIONS.find(x => x.id === e.id) || {}).label, fn: () => ACT.toggleStation(e) }; render(); saveUI(); }
+  },
+  async retrySave() { await retryAll(); },
+  reload() { location.reload(); },
+  goSugg() { S.sg[STEPS[S.step].id] = true; render(); const t = $('[data-addin="sugg"]'); if (t) { t.scrollIntoView({ block: 'center' }); t.focus(); } },
+  fillProblem() { const t = defPlain(); if (t) patch('meta', 'session', { problem: t }, 0); },
+  fillExp() { const x = starIdeas()[0]; if (x) patch('meta', 'session', { exp: { what: V('ideas', x.id, 'text') || '' } }, 0); },
+  async addIdeaQ() {
+    const text = (S.draftQ || '').trim(); if (!text) { const i = $('[data-addin="ideaq"]'); if (i) i.focus(); return; }
+    if (S.busyQ) return; S.busyQ = true;
+    const id = await add('ideas', { text, target: 'c', assum: '', effort: 1, impact: 1, star: false }, null, () => { RETRY['draft:ideaq'] = { label: 'רעיון: ' + text.slice(0, 30), fn: () => ACT.addIdeaQ() }; saveUI(); });
+    S.busyQ = false;
+    if (id) { delete RETRY['draft:ideaq']; if ((S.draftQ || '').trim() === text) S.draftQ = ''; persistDrafts(); S.focus = 'ideaq'; render(); toast('הרעיון נוסף'); }
   },
   go(e) {
     S.step = +e.i; lsSet(WS_KEY, S.step); lsSet(WS_KEY + '-id', STEPS[S.step].id);
@@ -1452,16 +1700,15 @@ const ACT = {
   async addPartner(e, el) { const inp = $('[data-addin]', el.closest('.addrow')); const v = inp.value.trim(); if (!v) { inp.focus(); return; } inp.value = ''; S.focus = 'partners'; await add('partners', { name: v, desc: '', kind: 'support', status: 0, next: '' }); },
   async addPartnerPreset(e) { await add('partners', { name: e.name, desc: '', kind: 'support', status: 0, next: '' }); },
   setf(e) { patch(e.col, e.id, { [e.f]: e.num ? +e.v : e.v }, 0); },
-  takeDriver() { DB.collection('meta').doc('session').set({ driverUid: ME.id, groupStep: S.step }, { merge: true }).catch(e => writeError(e, 'meta')); toast('עכשיו אתם ממלאים'); },
+  async takeDriver() { const d = driverId(); if (d && d !== ME.id && !confirm(nameOf(d) + ' עורכ.ת כרגע בשם הצוות. להעביר את העריכה אליכם?')) return; await claimDriver(); },
   followOn() { S.follow = true; const gs = M('groupStep'); if (gs != null) { S.step = gs; lsSet(WS_KEY, S.step); } if (ROOM) ROOM.presence({ step: S.step }).catch(() => {}); render(); scrollTo(0, 0); },
   setGroup(e) { patch('meta', 'session', { groupStep: +e.i }, 0); toast('הוצג לכל המשתתפים'); },
   role(e) { patch('live', 'session', { [e.k]: e.v === 'take' ? ME.id : null }, 0); },
   sugSec(e) { S.draftSugg.section = e.v; const t = $('[data-addin="sugg"]'); if (t) S.draftSugg.text = t.value; render(); },
-  async addSugg() {
+  addSugg() {
     const d = S.draftSugg, t = $('[data-addin="sugg"]'); const text = (t ? t.value : d.text).trim();
     if (!text) { if (t) t.focus(); return; }
-    d.text = ''; S.focus = 'sugg';
-    await add('sugg', { step: STEPS[S.step].id, section: d.section, text, status: 'open' }); toast('ההצעה נשלחה לממלא.ת');
+    d.text = text; persistDrafts(); sendSugg(text, STEPS[S.step].id, d.section);
   },
   sugDel(e) { removeDoc('sugg', e.id); },
   sugDismiss(e) { patch('sugg', e.id, { status: 'dismissed', handledBy: ME.id }, 0); },
@@ -1508,10 +1755,9 @@ const ACT = {
   genHmw() { patch('meta', 'session', { hmw: `איך נוכל לטפל בכך ש${M('def.cause') || '…'}, כך שהתופעה ״${M('def.phen') || '…'}״ תצטמצם?` }, 0); },
   dTarget(e) { S.draftIdea.text = $('#ideaText').value; S.draftIdea.assum = $('#ideaAssum').value; S.draftIdea.target = e.v; render(); },
   async addIdea() {
-    const text = $('#ideaText').value.trim(); if (!text) { $('#ideaText').focus(); return; }
-    const d = S.draftIdea; const assum = $('#ideaAssum').value;
-    S.draftIdea = { text: '', target: d.target, assum: '' };
-    await add('ideas', { text, target: d.target, assum, effort: 1, impact: 1, star: false }); toast('הרעיון נוסף');
+    const t = $('#ideaText'); const text = t.value.trim(); if (!text) { t.focus(); return; }
+    const d = S.draftIdea, assum = $('#ideaAssum').value; d.text = text; d.assum = assum; persistDrafts();
+    await sendIdea(text, d.target, assum);
   },
   vote(e) { patch('votes', e.id + '_' + ME.id, { idea: e.id, uid: ME.id, v: !iVoted(e.id) }, 0); },
   star(e) { patch('ideas', e.id, { star: !V('ideas', e.id, 'star') }, 0); },
@@ -1529,7 +1775,7 @@ const ACT = {
   presOpen() { S.pres = 0; presRender(); },
   presClose() { S.pres = null; presRender(); },
   presGo(e) { S.pres += +e.d; presRender(); },
-  openExport() { ACT.go({ i: STEPS.length - 1 }); },
+  openExport() { ACT.go({ i: stepIdx('board') }); },
   tToggle: () => timerAct('tToggle'), tReset: () => timerAct('tReset'), tAdd: e => timerAct('tAdd', +e.n)
 };
 function syncDef(p) {
@@ -1561,15 +1807,16 @@ document.addEventListener('keydown', ev => {
 });
 document.addEventListener('input', ev => {
   const el = ev.target;
-  if (el.id === 'ideaText') { S.draftIdea.text = el.value; autosize(el); return; }
-  if (el.dataset && el.dataset.addin === 'sugg') { S.draftSugg.text = el.value; autosize(el); return; }
+  if (el.id === 'ideaText') { S.draftIdea.text = el.value; autosize(el); persistDrafts(); return; }
+  if (el.dataset && el.dataset.addin === 'ideaq') { S.draftQ = el.value; persistDrafts(); return; }
+  if (el.dataset && el.dataset.addin === 'sugg') { S.draftSugg.text = el.value; autosize(el); persistDrafts(); return; }
   if (!el.dataset || !el.dataset.f) return;
   patch(el.dataset.col, el.dataset.id, nest(el.dataset.f, el.dataset.num ? (el.value === '' ? 0 : +el.value) : el.value));
   autosize(el);
   if (el.dataset.f.startsWith('def.')) { const d = $('.defbox .sent'); if (d) d.innerHTML = defSentence(); }
 });
 document.addEventListener('change', ev => { const el = ev.target; if (el.dataset && el.dataset.sugcol) S.adoptCol[el.dataset.sugcol] = el.value; });
-document.addEventListener('toggle', ev => { const d = ev.target; if (!d.classList) return; if (d.classList.contains('more')) S.gc[STEPS[S.step].id] = d.open; if (d.classList.contains('guide')) S.gx[STEPS[S.step].id] = d.open; if (d.classList.contains('side2')) S.sg[STEPS[S.step].id] = d.open; }, true);
+document.addEventListener('toggle', ev => { const d = ev.target; if (!d.classList) return; if (d.classList.contains('more')) S.gc[STEPS[S.step].id] = d.open; if (d.classList.contains('guide')) S.gx[STEPS[S.step].id] = d.open; if (d.classList.contains('side2')) S.sg[STEPS[S.step].id] = d.open; if (d.classList.contains('deepen')) S.dp[d.dataset.d] = d.open; }, true);
 addEventListener('resize', () => $$('textarea').forEach(autosize));
 
 /* ---------- אתחול ---------- */
@@ -1589,17 +1836,25 @@ addEventListener('resize', () => $$('textarea').forEach(autosize));
   DB = HOST.db; LOCAL = HOST.local;
   ME = { id: HOST.me.id, name: HOST.me.name };
   if (LOCAL) { RO = false; FILLER = true; } else { CANSUG = HOST.canWrite; if (!HOST.isRoster) { FILLER = false; RO = true; } }
-  if (HOST.step) { const i = STEPS.findIndex(x => x.id === HOST.step); if (i >= 0) { S.step = i; S.follow = false; } }
+  if (HOST.step) { const sx = STATIONS.find(x => x.id === HOST.step), i = STEPS.findIndex(x => x.id === (sx ? sx.main : HOST.step)); if (i >= 0) { S.step = i; S.follow = false; } }
   S.ready = true;
+  const checkLoaded = () => { if (!S.loaded && S.got.team && COLS.every(c => S.got[c])) S.loaded = true; };
   COLS.forEach(col => {
     DB.collection(col).onSnapshot(snap => {
+      /* מטמון ריק אינו נתונים: מחכים לאישור מהשרת לפני שמציגים פרויקט ריק */
+      if (snap.metadata && snap.metadata.fromCache && snap.empty && !S.got[col]) return;
       const m = {}; snap.docs.forEach(d => { m[d.id] = d.data(); }); D[col] = m;
-      S.got[col] = true; if (!S.loaded && COLS.every(c => S.got[c])) S.loaded = true;
+      S.got[col] = true; checkLoaded();
       if (col === 'meta') onMeta();
       scheduleRender();
-    }, err => { if (err && err.code === 'permission-denied') { RO = true; FILLER = false; S.got[col] = true; if (COLS.every(c => S.got[c])) S.loaded = true; scheduleRender(); } });
+    }, err => {
+      if (S.loaded) { if (err && err.code === 'permission-denied') { RO = true; FILLER = false; scheduleRender(); } return; }
+      S.loadErr = err || new Error('load-failed'); scheduleRender();
+    });
   });
-  setTimeout(() => { if (!S.loaded) { S.loaded = true; scheduleRender(); } }, 3000);
+  if (HOST.watchTeam) HOST.watchTeam(t => { T = t || {}; S.got.team = true; checkLoaded(); if (S.got.meta) onMeta(); scheduleRender(); }, err => { if (!S.loaded) { S.loadErr = err || new Error('load-failed'); scheduleRender(); } });
+  else { T = HOST.team || {}; S.got.team = true; }
+  setTimeout(() => { if (!S.loaded && !S.loadErr) { S.slow = true; scheduleRender(); } }, 12000);
 })();
 </script>
 

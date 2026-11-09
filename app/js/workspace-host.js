@@ -33,6 +33,11 @@ window.MHI_HOST = (async () => {
     /* חזרה ללוח היוזמה של הקבוצה, באפליקציה שמארחת את המרחב (או ישירות אם הדף נפתח לבד) */
     back: () => { const h = '#/g/' + gid + '/initiative'; if (window.parent !== window) { try { parent.location.hash = h; return; } catch (e) {} } location.href = 'index.html' + h; },
     step: q.get('step') || '',
-    report: obj => db.doc(base).set(obj, { merge: true })
+    report: obj => db.doc(base).set(obj, { merge: true }),
+    /* מסמך הצוות בזמן אמת (לסימון תחנות משותף). מחזיר פונקציית ביטול. */
+    watchTeam: (fn, err) => db.doc(base).onSnapshot(s => fn(s.exists ? s.data() : {}, s), err || (() => {})),
+    team: team.data(),
+    /* סימון תחנה כהושלמה או ביטול. ההבטחה נפתרת רק אחרי אישור כתיבה מהשרת. */
+    setStationDone: (id, val) => db.doc(base).set({ stationsDone: { [id]: !!val } }, { merge: true })
   };
 })();
