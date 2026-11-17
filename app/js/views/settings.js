@@ -18,7 +18,7 @@ export function mountSettings(root, ctx) {
           <form id="mgrs" class="stack" style="gap:12px;max-width:560px"><textarea class="in" name="emails" rows="3" dir="ltr" placeholder="name@tfi.org.il">${esc((g.managerEmails || []).join('\n'))}</textarea><div class="row"><button class="btn pri" type="submit">שמירה</button></div></form></section>` : ''}
         <section class="fr"><h3 class="s">פרסום הסילבוס</h3><p class="hint" style="margin:4px 0 14px">כל עוד הסילבוס טיוטה, המשתתפים נכנסים לקבוצה אבל לא רואים את התחנות.</p>
           <div class="row"><span class="pill ${g.published ? '' : 'p'}">${g.published ? 'פורסם' : 'טיוטה'}</span><button class="btn sm ${g.published ? '' : 'pri'}" data-act="publish">${g.published ? 'החזרה לטיוטה' : 'פרסום למשתתפים'}</button></div></section>
-        <section class="fr"><h3 class="s">כניסת משתתפים</h3><p class="hint" style="margin:4px 0 14px">משתתפים נכנסים מדף הפתיחה: בוחרים את העיר ומזינים את המייל שלהם, בלי קוד. אפשר להגדיר סיסמה אחרי הכניסה הראשונה, ובדף ״משתתפים״ אפשר לשלוח למי שנעל.ה את החשבון מייל לאיפוס. כל עיר מובילה לקבוצה אחת, שנקראת קבוצת הכניסה.</p>
+        <section class="fr"><h3 class="s">כניסת משתתפים</h3><p class="hint" style="margin:4px 0 14px">משתתפים נכנסים מדף הפתיחה: בוחרים את העיר ומזינים את המייל שלהם, בלי קוד ובלי סיסמה. המכשיר זוכר אותם, כך שבפעם הבאה הם נכנסים ישר. כל עיר מובילה לקבוצה אחת, שנקראת קבוצת הכניסה.</p>
           <div class="row"><span class="pill ${isEntry ? '' : 'p'}">${isEntry ? 'זו קבוצת הכניסה של ' + esc(g.city) : 'זו לא קבוצת הכניסה של ' + esc(g.city)}</span>${isEntry ? '' : '<button class="btn sm pri" data-act="makeEntry">הפיכה לקבוצת הכניסה של העיר</button>'}</div></section>`;
     },
     after: (st, el) => {

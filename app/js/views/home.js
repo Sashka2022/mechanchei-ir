@@ -1,6 +1,6 @@
 /* בית: למנהל.ת רשימת הקמה ותמונת מצב; למשתתף.ת התחנה הבאה והצוות שלי. */
 import { store } from '../store.js';
-import { esc, toast, confirmDialog, createView, docs, docData, byOrder } from '../ui.js';
+import { esc, toast, confirmDialog, createView, docs, docData, byOrder, uniqMembers } from '../ui.js';
 import { fmtDate, stationStatus, STAGES } from '../model.js';
 
 export function mountHome(root, ctx) {
@@ -11,7 +11,7 @@ export function mountHome(root, ctx) {
       sub('stations', db.collection(base + '/stations'), docs);
       sub('teams', db.collection(base + '/teams'), docs);
       sub('posts', db.collection(base + '/posts'), docs);
-      if (isManager) { sub('members', db.collection(base + '/members'), docs); sub('entry', db.doc('cityGroups/' + ctx.group.city), docData); }
+      if (isManager) { sub('members', db.collection(base + '/members'), s => uniqMembers(docs(s))); sub('entry', db.doc('cityGroups/' + ctx.group.city), docData); }
       else { sub('me', db.doc(`${base}/members/${me.uid}`), docData); sub('progress', db.collection(`${base}/members/${me.uid}/progress`), docs); }
     },
     render: st => {
@@ -45,7 +45,7 @@ function managerHome(g, stations, teams, members, gid, entry) {
   const isEntry = !!(entry && entry.gid === gid);
   return `<section class="fr blue"><div class="hint" style="font-weight:700;opacity:1">כניסת משתתפים</div>
       <h2 class="t" style="margin-top:6px">בלי קוד, עם מייל</h2>
-      <p style="margin:6px 0 16px">משתתפים נכנסים מדף הפתיחה: בוחרים את העיר <b>${esc(g.city || '')}</b> ומזינים את המייל שלהם, בלי קוד. בכניסה הראשונה הם כותבים גם שם, ואפשר להגדיר סיסמה אחר כך. מי ששכח.ה סיסמה: דף ״משתתפים״, ״איפוס סיסמה״.</p>
+      <p style="margin:6px 0 16px">משתתפים נכנסים מדף הפתיחה: בוחרים את העיר <b>${esc(g.city || '')}</b> ומזינים את המייל שלהם, בלי קוד. בכניסה הראשונה הם כותבים גם שם. אין סיסמה, והמכשיר זוכר אותם לכניסה הבאה.</p>
       ${isEntry ? '' : `<p style="margin:0 0 16px"><b>שימו לב:</b> הקבוצה הזו עוד לא קבוצת הכניסה של ${esc(g.city || '')}, ולכן משתתפים לא יכולים להצטרף אליה. <a href="#/g/${gid}/settings" style="color:inherit;text-decoration:underline">להגדרות</a></p>`}
       <div class="row"><button class="btn lt" data-act="copyLink" data-v="${esc(inv)}">העתקת קישור לאפליקציה</button></div></section>
     <section class="fr"><h3 class="s">הקמת הקבוצה</h3><div class="list" style="margin-top:12px">${steps.map(([t, d, ok, href, lab], i) => `<div class="item ${ok ? '' : ''}"><span class="hn">${ok ? '✓' : i + 1}</span><div class="grow" style="padding:6px 8px"><b>${t}</b><div class="hint">${d}</div></div>${href ? `<a class="btn sm" href="${href}">${lab}</a>` : ''}</div>`).join('')}</div></section>

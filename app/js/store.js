@@ -29,12 +29,13 @@ async function init() {
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
 }
 
-/* חשבון בלי סיסמה: הסיסמה בפועל נגזרת מהמייל. מי שמגדיר.ה סיסמה מחליפ.ה אותה בסיסמה שלו.ה. */
+/* משתתפים נכנסים בלי סיסמה בכלל. הסיסמה הפנימית נגזרת מהמייל, והמשתמש.ת לא רואה אותה.
+   חשבונות חדשים נפתחים על כתובת פנימית (alias) שנגזרת מהמייל, כך שהם לא מתנגשים לעולם בחשבון קיים על אותו מייל
+   (למשל חשבון Google של מנהל.ת, או חשבון ישן שהוגדרה לו סיסמה). חשבונות ותיקים על המייל עצמו ממשיכים לעבוד. */
 const BAD_CREDS = ['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/user-not-found'];
-async function defaultPw(email) {
-  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('mhi-open:' + email));
-  return 'mhi-' + [...new Uint8Array(h)].slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const hex = async (s, n) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].slice(0, n).map(b => b.toString(16).padStart(2, '0')).join('');
+const defaultPw = async email => 'mhi-' + await hex('mhi-open:' + email, 12);
+const aliasEmail = async email => 'p-' + await hex('mhi-alias:' + email, 16) + '@mechanchei-ir-25939.firebaseapp.com';
 
 export const store = {
   mode,
@@ -59,33 +60,22 @@ export const store = {
     catch (x) { if (x.code === 'permission-denied') throw Object.assign(x, { code: 'wrong-code' }); throw x; }
     store.adminUid = u.uid; return u;
   },
-  /* כניסת משתתף.ת עם מייל. בפעם הראשונה נפתח חשבון בלי סיסמה (הסיסמה הפנימית נגזרת מהמייל), ואפשר להגדיר סיסמה אחר כך.
-     זורק שגיאה עם code: 'need-name' (כניסה ראשונה או סיסמה, חסר שם), 'need-password' או 'wrong-password'. */
-  async signInParticipant(email, name, password) {
+  /* כניסת משתתף.ת עם מייל בלבד, בלי סיסמה. סדר: חשבון alias (כל החשבונות החדשים), חשבון ותיק על המייל עצמו, ואם אין, פתיחת alias.
+     זורק code: 'need-name' כשזו כניסה ראשונה ולא נכתב שם. */
+  async signInParticipant(email, name) {
     const e = String(email || '').trim().toLowerCase();
     if (!e) throw Object.assign(new Error('missing-email'), { code: 'missing-email' });
-    const def = await defaultPw(e);
-    if (password) {
-      try { return { user: (await auth.signInWithEmailAndPassword(e, password)).user }; }
-      catch (x) { throw BAD_CREDS.includes(x.code) ? Object.assign(x, { code: 'wrong-password' }) : x; }
-    }
-    try { return { user: (await auth.signInWithEmailAndPassword(e, def)).user }; }
-    catch (x) { if (!BAD_CREDS.includes(x.code)) throw x; }
+    const def = await defaultPw(e), alias = await aliasEmail(e);
+    const tryIn = async addr => { try { return (await auth.signInWithEmailAndPassword(addr, def)).user; } catch (x) { if (BAD_CREDS.includes(x.code)) return null; throw x; } };
+    const named = async u => { if (name && u.displayName !== name) { try { await u.updateProfile({ displayName: name }); } catch (x) {} } return u; };
+    let u = await tryIn(alias);
+    if (u) return { user: await named(u) };
+    u = await tryIn(e);   // חשבונות שנפתחו לפני המעבר ל-alias
+    if (u) return { user: await named(u) };
     if (!name) throw Object.assign(new Error('need-name'), { code: 'need-name' });
-    try {
-      const r = await auth.createUserWithEmailAndPassword(e, def);
-      await r.user.updateProfile({ displayName: name });
-      return { user: r.user, isNew: true };
-    } catch (x) { throw x.code === 'auth/email-already-in-use' ? Object.assign(x, { code: 'need-password' }) : x; }
+    const r = await auth.createUserWithEmailAndPassword(alias, def);
+    await r.user.updateProfile({ displayName: name });
+    return { user: r.user, isNew: true };
   },
-  /* הגדרת סיסמה, החלפה, או הסרה (next ריק = חזרה לכניסה בלי סיסמה). current = הסיסמה הנוכחית אם יש. */
-  async changePassword(current, next) {
-    const u = auth.currentUser, def = await defaultPw(u.email);
-    try { await auth.signInWithEmailAndPassword(u.email, current || def); }
-    catch (x) { throw BAD_CREDS.includes(x.code) ? Object.assign(x, { code: 'wrong-password' }) : x; }
-    await auth.currentUser.updatePassword(next || def);
-  },
-  /* מייל איפוס סיסמה: מי שמקבל.ת אותו קובע.ת סיסמה חדשה */
-  sendReset: email => auth.sendPasswordResetEmail(String(email || '').trim().toLowerCase()),
   signOut: () => auth.signOut()
 };

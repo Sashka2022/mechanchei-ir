@@ -57,5 +57,11 @@ export function createView(root, { watch, render, acts = {}, after }) {
 }
 
 export const docs = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
+/* משתתף.ת שעבר.ה לחשבון חדש (בלי סיסמה) משאיר.ה רשומה ישנה על אותו מייל. מציגים רק את החדשה מכל מייל. */
+export const uniqMembers = list => {
+  const best = new Map();
+  for (const m of list) { const k = (m.email || m.id).toLowerCase(), b = best.get(k); if (!b || (m.joinedAt || 0) > (b.joinedAt || 0)) best.set(k, m); }
+  return list.filter(m => best.get((m.email || m.id).toLowerCase()) === m);
+};
 export const docData = snap => snap.exists ? { id: snap.id, ...snap.data() } : null;
 export const form = el => Object.fromEntries(new FormData(el).entries());

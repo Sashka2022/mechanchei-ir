@@ -1,7 +1,7 @@
 /* הובלת יוזמה: לוח קצר (כרטיס אחד: שם הפרויקט, ארבע תחנות, כפתור המשך), אזורים נפרדים לצוותים, לגלריית הפיצ׳ים ולניהול,
    ומרחב עבודה במסך מלא (initiative.html). האפיון המלא: docs/initiative-process-spec.md */
 import { store } from '../store.js';
-import { esc, toast, confirmDialog, createView, docs, byOrder } from '../ui.js';
+import { esc, toast, confirmDialog, createView, docs, byOrder, uniqMembers } from '../ui.js';
 import { WS_STATIONS, wsLabel, stationDone, firstOpenStation, continueTarget } from '../model.js';
 
 export function mountInitiative(root, ctx, params = {}) {
@@ -39,7 +39,7 @@ function mountDashboard(root, ctx) {
   return createView(root, {
     watch: (st, sub) => {
       sub('teams', db.collection(base + '/teams'), docs);
-      sub('members', db.collection(base + '/members'), docs);
+      sub('members', db.collection(base + '/members'), s => uniqMembers(docs(s)));
       sub('stations', db.collection(base + '/stations'), docs);
     },
     render: st => {
