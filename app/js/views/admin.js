@@ -64,7 +64,7 @@ export function mountAdmin(root, { user, sup, go }) {
       if (mf) mf.onsubmit = async e => {
         e.preventDefault();
         const email = mf.email.value.trim().toLowerCase(); if (!email) return;
-        try { await db.doc('managers/' + email).set({ email, name: mf.mname.value.trim(), addedBy: user.email || '', at: Date.now() }); mf.reset(); toast('המנהל.ת נוספ.ה'); }
+        try { await db.doc('managers/' + email).set({ email, name: mf.mname.value.trim(), addedBy: user.email || '', at: Date.now() }); mf.reset(); toast('המנהל.ת נוספ.ה'); st.redraw(); }
         catch (x) { toast('ההוספה נכשלה'); }
       };
     },

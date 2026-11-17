@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "app", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "5174"], "port": 5174 }
+    { "name": "app", "runtimeExecutable": "powershell", "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "dev/serve.ps1", "-Port", "5174"], "port": 5174 },
+    { "name": "app-python", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "5174"], "port": 5174 }
   ]
 }

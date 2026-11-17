@@ -106,6 +106,8 @@ function mountDashboard(root, ctx) {
           await ref.set({ name, createdBy: me.uid, createdAt: Date.now(), progress: {} });
           if (!isManager) await joinTeam(ref.id, st);
           toast('הצוות נפתח');
+          st.redraw();   // אחרי Enter הפוקוס נשאר בשדה, ו-createView דוחה רינדור בזמן הקלדה
+
         } catch (x) { toast('פתיחת הצוות נכשלה'); e.submitter.disabled = false; }
       });
     },

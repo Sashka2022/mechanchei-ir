@@ -6,6 +6,9 @@ import { DEMO_KEY } from '../demo.js';
 
 const ADMIN_ICON = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 9.5C8 19.2 5 15.5 5 11V6l7-3z"/><circle cx="12" cy="10" r="2.4"/><path d="M8 16c.8-2 2.4-3 4-3s3.2 1 4 3"/></svg>`;
 
+/* הודעה שצריכה לשרוד את הרינדור מחדש שקורה אחרי signOut (main.js מנתב מחדש כשהמשתמש.ת מתנתק.ת) */
+let pendingNotice = null;
+
 export function mountLanding(root, { go }) {
   const local = store.mode === 'local';
   root.innerHTML = `
@@ -48,12 +51,17 @@ export function mountLanding(root, { go }) {
 
   let city = '';
   const je = root.querySelector('#je'), jn = root.querySelector('#jn'), jp = root.querySelector('#jp'), jpwBox = root.querySelector('#jpwBox'), jerr = root.querySelector('#jerr');
-  root.querySelectorAll('.ccard').forEach(b => b.addEventListener('click', () => {
-    city = b.dataset.city;
+  const openJoin = c => {
+    city = c;
     root.querySelector('#joinTitle').textContent = 'קבוצת ' + city;
     root.querySelector('#jimg').src = `assets/cities/${CITY_LOGOS[city]}.webp`;
     jerr.textContent = ''; jpwBox.hidden = true; jp.value = ''; joinDlg.showModal(); je.focus();
-  }));
+  };
+  root.querySelectorAll('.ccard').forEach(b => b.addEventListener('click', () => openJoin(b.dataset.city)));
+  if (pendingNotice) {
+    const n = pendingNotice; pendingNotice = null;
+    openJoin(n.city); je.value = n.email; jn.value = n.name; jerr.textContent = n.msg;
+  }
   root.querySelector('#jforgot').addEventListener('click', async () => {
     const em = je.value.trim();
     if (!em.includes('@')) { jerr.textContent = 'כתבו למעלה את המייל, ואז לחצו שוב'; return; }
@@ -71,7 +79,13 @@ export function mountLanding(root, { go }) {
     try {
       const { user } = await store.signInParticipant(email, name, password);
       const cg = await store.db.doc('cityGroups/' + city).get();
-      if (!cg.exists) { await store.signOut(); jerr.textContent = 'קבוצת העיר עוד לא נפתחה. אפשר לפנות למנהל.ת התוכנית'; btn.disabled = false; return; }
+      if (!cg.exists) {
+        const msg = 'קבוצת העיר עוד לא נפתחה. אפשר לפנות למנהל.ת התוכנית';
+        pendingNotice = { city, email, name, msg };
+        await store.signOut();
+        if (pendingNotice) { pendingNotice = null; jerr.textContent = msg; btn.disabled = false; }   // אם לא היה רינדור מחדש
+        return;
+      }
       const gid = cg.data().gid, ref = store.db.doc(`groups/${gid}/members/${user.uid}`);
       if (!(await ref.get()).exists) await ref.set({ name: name || user.displayName || email.split('@')[0], email, city, joinedAt: Date.now() });
       try { localStorage.setItem(LAST_KEY, gid); } catch (x) {}
